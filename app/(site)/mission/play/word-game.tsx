@@ -16,6 +16,12 @@ interface StroopRound {
   correctAnswer: boolean;
 }
 
+const INITIAL_ROUND: StroopRound = {
+  word: "RED",
+  colorHex: COLORS[0],
+  correctAnswer: true,
+};
+
 function generateRound(): StroopRound {
   const shouldMatch = Math.random() < 0.5;
   let wordIdx: number;
@@ -52,7 +58,7 @@ interface WordGameProps {
 }
 
 export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: WordGameProps) {
-  const [round, setRound] = useState<StroopRound>(generateRound);
+  const [round, setRound] = useState<StroopRound>(INITIAL_ROUND);
   const [timeLeft, setTimeLeft] = useState(30);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPlayingRef = useRef(isPlaying);
