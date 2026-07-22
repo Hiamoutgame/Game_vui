@@ -48,7 +48,7 @@ export default function MissionPage() {
   const [activeTutorial, setActiveTutorial] = useState<string>("km");
 
   const toggleTask = (id: string) => {
-    setSelectedTasks(prev => 
+    setSelectedTasks(prev =>
       prev.includes(id) ? prev.filter(t => t !== id) : [...prev, id]
     );
   };
@@ -77,9 +77,9 @@ export default function MissionPage() {
             {allTasks.map((task, idx) => {
               const isSelected = selectedTasks.includes(task.id);
 
-              
+
               return (
-                <div 
+                <div
                   key={task.id}
                   onClick={() => toggleTask(task.id)}
                   onMouseEnter={() => setActiveTutorial(task.id)}
@@ -97,7 +97,7 @@ export default function MissionPage() {
                     </h3>
                     <p className="text-sm text-[color:var(--text-muted)] mt-1 line-clamp-1">{task.desc}</p>
                   </div>
-                  
+
                   {/* Checkbox */}
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border-2 transition-colors ${isSelected ? "border-[color:var(--neon-cyan)] bg-[color:var(--neon-cyan)] text-black" : "border-[color:var(--neon-cyan)]/50 bg-transparent text-transparent"}`}>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
@@ -112,7 +112,7 @@ export default function MissionPage() {
                 </div>
               );
             })}
-            
+
             {/* Disabled Helper Message */}
             {!canStart && (
               <div className="flex items-center gap-3 rounded-lg border border-[color:var(--neon-pink)]/40 bg-[color:var(--surface)]/60 px-4 py-3 text-sm text-[color:var(--text-muted)] mt-2">
@@ -156,23 +156,23 @@ export default function MissionPage() {
             >
               Bắt đầu nhiệm vụ
             </Link>
-            <button 
+            <button
               onClick={() => setSelectedTasks(["km", "ht"])}
               className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[color:var(--neon-pink)]/60 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold transition hover:border-[color:var(--neon-pink)] hover:text-white"
             >
               Đặt lại mặc định
             </button>
-            <Link 
+            <Link
               href="/mission/play?demo=single"
               className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[color:var(--neon-cyan)]/50 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold transition hover:border-[color:var(--neon-cyan)] hover:text-white"
             >
-              Demo 1 tác vụ
+              Chơi thử đơn tác vụ
             </Link>
-            <Link 
+            <Link
               href="/mission/play?demo=multi"
               className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[color:var(--neon-purple)]/60 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold transition hover:border-[color:var(--neon-purple)] hover:text-white"
             >
-              Demo đa nhiệm
+              Chơi thử đa tác vụ
             </Link>
           </div>
         </div>
