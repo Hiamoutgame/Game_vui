@@ -59,6 +59,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
 
   const checkVictory = useCallback(
     (level: number, scores: GameScores, active: GameId[]) => {
+      if (demoCapRef.current && level >= demoCapRef.current) return true;
       if (level >= VICTORY_LEVEL && !demoCapRef.current) return true;
       const allMaxed = active.every((g) => (scores[g] || 0) >= MAX_PER_GAME_SCORE);
       return allMaxed;

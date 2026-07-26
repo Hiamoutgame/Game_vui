@@ -13,10 +13,9 @@ interface GridConfig {
 }
 
 function getGridConfig(memLevel: number): GridConfig {
-  if (memLevel <= 4)  return { pairs: 2, cols: 2, totalCards: 4 };
-  if (memLevel <= 8)  return { pairs: 3, cols: 3, totalCards: 6 };
-  if (memLevel <= 13) return { pairs: 4, cols: 3, totalCards: 8 };
-  return { pairs: 5, cols: 3, totalCards: 10 };
+  if (memLevel < 10) return { pairs: 2, cols: 2, totalCards: 4 };
+  if (memLevel <= 15) return { pairs: 3, cols: 3, totalCards: 6 };
+  return { pairs: 4, cols: 3, totalCards: 8 };
 }
 
 function getTimerDuration(memLevel: number): number {
@@ -46,7 +45,7 @@ interface MemoryGameProps {
   onPenaltyReset: () => void;
 }
 
-export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: MemoryGameProps) {
+export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: MemoryGameProps) {
   const [memoryLevel, setMemoryLevel] = useState(1);
   const [cards, setCards] = useState<string[]>([]);
   const [gridConfig, setGridConfig] = useState<GridConfig>({ pairs: 2, cols: 2, totalCards: 4 });
@@ -54,11 +53,13 @@ export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKe
   const [matchedIndices, setMatchedIndices] = useState<Set<number>>(new Set());
   const [locked, setLocked] = useState(false);
   const [timeLeft, setTimeLeft] = useState(30);
+  const [timerResetKey, setTimerResetKey] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const flippedPairRef = useRef<number[]>([]);
   const matchedCountRef = useRef(0);
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
+  const wasPlayingRef = useRef(false);
 
   // Sync refs after render
   useEffect(() => {
@@ -88,14 +89,22 @@ export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKe
     []
   );
 
-  // Initialize
+  // Initialize and change card set only when mission level increases
   useEffect(() => {
-    if (isPlaying) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional init on play start
-      setMemoryLevel(1);
-      setup(1);
+    if (!isPlaying) {
+      wasPlayingRef.current = false;
+      return;
     }
-  }, [isPlaying, setup]);
+
+    const justStarted = !wasPlayingRef.current;
+    const nextLevel = Math.max(1, Math.min(MAX_PER_GAME_SCORE, globalLevel));
+    setMemoryLevel((currentLevel) => {
+      if (!justStarted && nextLevel <= currentLevel && cards.length > 0) return currentLevel;
+      setup(nextLevel);
+      return nextLevel;
+    });
+    wasPlayingRef.current = true;
+  }, [isPlaying, globalLevel, setup, cards.length]);
 
   // Timer
   useEffect(() => {
@@ -122,15 +131,18 @@ export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKe
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, onFail, memoryLevel]);
+  }, [isPlaying, isComplete, onFail, memoryLevel, timerResetKey]);
 
   // Penalty reset
   useEffect(() => {
     if (penaltyKey > 0 && isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       setTimeout(() => {
-        setMemoryLevel(1);
-        setup(1);
+        setFlippedIndices(new Set());
+        setLocked(false);
+        flippedPairRef.current = [];
+        setTimeLeft(getTimerDuration(memoryLevel));
+        setTimerResetKey((value) => value + 1);
         onPenaltyReset();
       }, 600);
     }
@@ -177,11 +189,7 @@ export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKe
               if (gameScore + matchedCountRef.current >= MAX_PER_GAME_SCORE) {
                 // Memory complete – will be handled by parent
               } else {
-                setMemoryLevel((prev) => {
-                  const next = Math.min(20, prev + 1);
-                  setup(next);
-                  return next;
-                });
+                setup(memoryLevel);
               }
             }
           }, 300);
@@ -199,7 +207,7 @@ export default function MemoryGame({ gameScore, isPlaying, isComplete, penaltyKe
         }
       }
     },
-    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, onFail, setup, gameScore]
+    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, onFail, setup, gameScore, memoryLevel]
   );
 
   // Keyboard handler

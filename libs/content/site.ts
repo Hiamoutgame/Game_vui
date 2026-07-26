@@ -14,6 +14,8 @@
     email: "anhvhqss181001@fpt.edu.vn",
   },
   social: {
-    facebook: "https://www.facebook.com/share/p/186Rx9bgH9/",
+    facebook: "https://www.facebook.com/profile.php?id=61590466420347",
+    instagram: "https://www.instagram.com/vutrutaskvu",
+    tiktok: "https://www.tiktok.com/@vutrutaskvu",
   },
 };

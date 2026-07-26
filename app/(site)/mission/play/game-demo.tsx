@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { GameId } from "./types";
 
 interface DemoSlide {
@@ -8,14 +8,20 @@ interface DemoSlide {
   text: string;
 }
 
-const DEMO_DATA: Record<GameId, { title: string; icon: string; slides: DemoSlide[] }> = {
+interface DemoInfo {
+  title: string;
+  icon: string;
+  slides: DemoSlide[];
+}
+
+const DEMO_DATA: Record<GameId, DemoInfo> = {
   km: {
     title: "Ký ức phân mảnh",
     icon: "🧠",
     slides: [
       {
         icon: "🃏",
-        text: "Tất cả các thẻ trên màn hình đều được úp xuống. Nhấp chuột hoặc bấm phím số (1-9, 0) để tìm và lật mở tất cả các cặp thẻ giống nhau.",
+        text: "Lật hai thẻ mỗi lượt để tìm các cặp ký hiệu giống nhau. Demo chỉ hoàn tất khi bạn ghép đúng cả 2 cặp.",
       },
     ],
   },
@@ -25,7 +31,7 @@ const DEMO_DATA: Record<GameId, { title: string; icon: string; slides: DemoSlide
     slides: [
       {
         icon: "⚽",
-        text: "Một khối tác vụ sẽ rơi từ trên xuống. Kéo máng sang trái hoặc phải để hứng, hoặc dùng phím A/D.",
+        text: "Di chuyển máng sang trái hoặc phải để hứng khối tác vụ đang rơi. Demo hoàn tất khi bạn hứng được 1 khối.",
       },
     ],
   },
@@ -35,7 +41,7 @@ const DEMO_DATA: Record<GameId, { title: string; icon: string; slides: DemoSlide
     slides: [
       {
         icon: "🎨",
-        text: 'Chọn "ĐÚNG" nếu màu của chữ giống với nghĩa của chữ (VD: chữ "ĐỎ" được tô màu đỏ). Chọn "SAI" nếu màu và nghĩa chữ không khớp.',
+        text: 'Chọn "ĐÚNG" nếu nghĩa của chữ khớp với màu hiển thị. Chọn "SAI" nếu nghĩa và màu không khớp.',
       },
     ],
   },
@@ -45,7 +51,7 @@ const DEMO_DATA: Record<GameId, { title: string; icon: string; slides: DemoSlide
     slides: [
       {
         icon: "🔄",
-        text: "Một hướng mũi tên xuất hiện. Dùng bàn phím mũi tên/WASD hoặc click chuột vào hướng NGƯỢC LẠI với hướng hiển thị.",
+        text: "Khi thấy mũi tên, hãy chọn hướng ngược lại hoàn toàn. Demo hoàn tất khi bạn phản hồi đúng hướng đảo chiều.",
       },
     ],
   },
@@ -58,107 +64,109 @@ interface GameDemoProps {
   onFinish: () => void;
 }
 
+interface PracticeProps {
+  onComplete: () => void;
+}
+
+const buttonBaseClass =
+  "rounded-lg border px-4 py-2 text-xs font-bold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]";
+
+const PRACTICE_AREA_HEIGHT = 112;
+const PRACTICE_BALL_SIZE = 16;
+const PRACTICE_BUCKET_HEIGHT = 16;
+const PRACTICE_BUCKET_BOTTOM = 8;
+const PRACTICE_BALL_VISIBLE_WHEN_CAUGHT = 0.75;
+
 export default function GameDemo({ gameList, standalone, isOpen, onFinish }: GameDemoProps) {
+  const normalizedGameList = gameList.length > 0 ? gameList : (["km", "ht", "nc", "px"] as GameId[]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [showPractice, setShowPractice] = useState(false);
-  const practiceRef = useRef<HTMLDivElement>(null);
+  const [practiceComplete, setPracticeComplete] = useState(false);
 
-  const demo = DEMO_DATA[gameList[currentIndex]] || DEMO_DATA.km;
-
-  const nextSlide = useCallback(() => {
-    const slides = demo.slides;
-    if (currentSlide + 1 >= slides.length) {
-      setShowPractice(true);
-    } else {
-      setCurrentSlide((s) => s + 1);
-    }
-  }, [currentSlide, demo.slides]);
-
-  const nextGame = useCallback(() => {
-    setShowPractice(false);
-    setCurrentSlide(0);
-    if (currentIndex + 1 >= gameList.length) {
-      onFinish();
-    } else {
-      setCurrentIndex((i) => i + 1);
-    }
-  }, [currentIndex, gameList.length, onFinish]);
-
-  const skipAll = useCallback(() => {
-    onFinish();
-  }, [onFinish]);
-
-  // Practice content generation
-  useEffect(() => {
-    if (!showPractice || !practiceRef.current) return;
-
-    const container = practiceRef.current;
-    container.innerHTML = "";
-
-    const gameId = gameList[currentIndex];
-    const practiceHtml = getPracticeContent(gameId);
-    container.innerHTML = practiceHtml;
-  }, [showPractice, currentIndex, gameList]);
+  const currentGameId = normalizedGameList[currentIndex] || "km";
+  const demo = DEMO_DATA[currentGameId];
+  const totalGames = normalizedGameList.length;
+  const slide = demo.slides[currentSlide] || demo.slides[0];
+  const isLastGame = currentIndex + 1 >= totalGames;
 
   if (!isOpen) return null;
 
-  const totalGames = gameList.length;
-  const slide = demo.slides[currentSlide] || demo.slides[0];
+  const goToPractice = () => {
+    if (currentSlide + 1 >= demo.slides.length) {
+      setShowPractice(true);
+      setPracticeComplete(false);
+    } else {
+      setCurrentSlide((value) => value + 1);
+    }
+  };
+
+  const goToNextGame = () => {
+    if (!practiceComplete) return;
+
+    if (isLastGame) {
+      onFinish();
+      return;
+    }
+
+    setCurrentSlide(0);
+    setShowPractice(false);
+    setPracticeComplete(false);
+    setCurrentIndex((value) => value + 1);
+  };
 
   return (
     <div
-      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70"
+      className="fixed inset-0 z-[10000] flex items-center justify-center bg-black/70 px-4"
       role="dialog"
       aria-modal="true"
       aria-label={`Hướng dẫn: ${demo.title}`}
     >
-      <div className="bg-[color:var(--background)] border border-[color:var(--neon-cyan)]/40 rounded-2xl p-6 max-w-[440px] w-[92%] shadow-[0_12px_40px_rgba(0,0,0,0.5)] text-center max-h-[90vh] overflow-y-auto">
-        {/* Header */}
+      <div className="max-h-[90vh] w-full max-w-[460px] overflow-y-auto rounded-2xl border border-[color:var(--neon-cyan)]/40 bg-[color:var(--background)] p-6 text-center shadow-[0_12px_40px_rgba(0,0,0,0.5)]">
         <div className="mb-3">
           <p className="font-mono text-xs font-bold uppercase tracking-[0.1em] text-[color:var(--neon-cyan)]">
             TÁC VỤ {currentIndex + 1}/{totalGames}
           </p>
-          <div className="text-4xl my-2">{demo.icon}</div>
-          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-white">
-            {demo.title}
-          </h2>
+          <div className="my-2 text-4xl" aria-hidden="true">
+            {demo.icon}
+          </div>
+          <h2 className="font-[family-name:var(--font-heading)] text-lg font-bold text-white">{demo.title}</h2>
         </div>
 
-        {/* Slides / Practice area */}
         {!showPractice ? (
           <div className="my-4">
-            <div className="text-3xl mb-2">{slide.icon}</div>
-            <p className="text-sm text-[color:var(--text-muted)] leading-relaxed px-2">{slide.text}</p>
+            <div className="mb-2 text-3xl" aria-hidden="true">
+              {slide.icon}
+            </div>
+            <p className="px-2 text-sm leading-relaxed text-[color:var(--text-muted)]">{slide.text}</p>
           </div>
         ) : (
-          <div
-            ref={practiceRef}
-            className="my-4 p-3 bg-[color:var(--surface)] rounded-lg border border-dashed border-[color:var(--neon-cyan)]/30 min-h-[100px] flex items-center justify-center flex-col gap-2"
-          >
-            <p className="text-xs text-[color:var(--text-muted)]">Đang tải...</p>
+          <div className="my-4 rounded-lg border border-dashed border-[color:var(--neon-cyan)]/30 bg-[color:var(--surface)] p-3">
+            <PracticeContent gameId={currentGameId} onComplete={() => setPracticeComplete(true)} />
           </div>
         )}
 
-        {/* Navigation */}
-        <div className="flex justify-between items-center gap-3 mt-4">
-          <div className="flex gap-2">
-            {!standalone && (
-              <button onClick={skipAll} className="px-3 py-2 rounded-lg text-xs font-bold bg-white/10 text-[color:var(--text-muted)] hover:bg-white/20 transition">
-                Bỏ qua tất cả
-              </button>
-            )}
-            {showPractice && (
-              <button onClick={nextGame} className="px-3 py-2 rounded-lg text-xs font-bold bg-white/10 text-[color:var(--text-muted)] hover:bg-white/20 transition">
-                Bỏ qua game này
-              </button>
-            )}
-          </div>
+        <div className="mt-4 flex flex-col gap-3">
+          {showPractice && !practiceComplete ? (
+            <p className="text-xs font-bold text-[color:var(--neon-pink)]">Hoàn thành demo này để mở tác vụ tiếp theo.</p>
+          ) : null}
           <button
-            onClick={!showPractice ? nextSlide : nextGame}
-            className="px-6 py-2 rounded-lg font-bold text-sm bg-[color:var(--neon-blue)] text-white hover:bg-[color:var(--neon-purple)] transition shadow-[0_0_16px_rgba(55,15,255,0.4)]"
+            type="button"
+            onClick={!showPractice ? goToPractice : goToNextGame}
+            disabled={showPractice && !practiceComplete}
+            className={`min-h-11 rounded-lg px-6 py-2 text-sm font-bold transition shadow-[0_0_16px_rgba(55,15,255,0.4)] ${
+              showPractice && !practiceComplete
+                ? "cursor-not-allowed bg-white/10 text-white/40 shadow-none"
+                : "bg-[color:var(--neon-blue)] text-white hover:bg-[color:var(--neon-purple)]"
+            }`}
           >
-            {!showPractice ? "Tiếp tục →" : gameList[currentIndex + 1] ? "Game tiếp theo →" : "Bắt đầu nhiệm vụ"}
+            {!showPractice
+              ? "Vào demo tương tác →"
+              : isLastGame
+                ? standalone
+                  ? "Hoàn tất demo"
+                  : "Bắt đầu nhiệm vụ"
+                : "Game tiếp theo →"}
           </button>
         </div>
       </div>
@@ -166,101 +174,308 @@ export default function GameDemo({ gameList, standalone, isOpen, onFinish }: Gam
   );
 }
 
-// Simple practice content per game
-function getPracticeContent(gameId: GameId): string {
-  switch (gameId) {
-    case "km": {
-      const emojis = ["⭐", "🔥"];
-      const cards = [...emojis, ...emojis].sort(() => Math.random() - 0.5);
-      return (
-        '<div style="font-size:11px;color:var(--neon-cyan);margin-bottom:6px;">Thử lật cặp thẻ (bấm vào để thử)</div>' +
-        '<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:6px;max-width:140px;margin:0 auto;">' +
-        cards
-          .map(
-            (emoji, i) =>
-              `<div class="demo-mem-card" data-emoji="${emoji}" data-idx="${i}" style="aspect-ratio:1;background:linear-gradient(135deg,#2c3e50,#3498db);border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:24px;color:white;min-width:50px;">?</div>`
-          )
-          .join("") +
-        "</div>" +
-        '<div id="demo-mem-result" style="margin-top:6px;font-size:11px;"></div>' +
-        "<script>" +
-        "(function(){var flipped=[];var matched=0;var locked=false;var cards=document.querySelectorAll('.demo-mem-card');" +
-        "cards.forEach(function(c){c.onclick=function(){if(locked||this.textContent!=='?'||matched>=2)return;" +
-        "this.textContent=this.dataset.emoji;this.style.background='linear-gradient(135deg,#667eea,#764ba2)';" +
-        "flipped.push(this);if(flipped.length===2){locked=true;" +
-        "if(flipped[0].dataset.emoji===flipped[1].dataset.emoji){matched++;" +
-        "setTimeout(function(){flipped[0].style.opacity='0';flipped[1].style.opacity='0';flipped=[];locked=false;" +
-        "if(matched>=2){document.getElementById('demo-mem-result').innerHTML='<span style=color:#39ff14>Đã ghép xong!</span>';}" +
-        "},300);}else{setTimeout(function(){flipped[0].textContent='?';flipped[0].style.background='linear-gradient(135deg,#2c3e50,#3498db)';" +
-        "flipped[1].textContent='?';flipped[1].style.background='linear-gradient(135deg,#2c3e50,#3498db)';flipped=[];locked=false;},600);}}};});" +
-        "})();</script>"
-      );
+function PracticeContent({ gameId, onComplete }: { gameId: GameId; onComplete: () => void }) {
+  if (gameId === "km") return <MemoryPractice onComplete={onComplete} />;
+  if (gameId === "ht") return <CatchPractice onComplete={onComplete} />;
+  if (gameId === "nc") return <WordPractice onComplete={onComplete} />;
+  return <ReverseArrowPractice onComplete={onComplete} />;
+}
+
+function MemoryPractice({ onComplete }: PracticeProps) {
+  const cards = useMemo(
+    () => [
+      { id: 1, value: "★" },
+      { id: 2, value: "◆" },
+      { id: 3, value: "★" },
+      { id: 4, value: "◆" },
+    ],
+    []
+  );
+  const [flipped, setFlipped] = useState<number[]>([]);
+  const [matchedValues, setMatchedValues] = useState<string[]>([]);
+  const [message, setMessage] = useState("Lật 2 thẻ để tìm cặp giống nhau.");
+  const lockRef = useRef(false);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const pickCard = (cardId: number) => {
+    if (lockRef.current || flipped.includes(cardId)) return;
+
+    const nextFlipped = [...flipped, cardId];
+    setFlipped(nextFlipped);
+
+    if (nextFlipped.length !== 2) return;
+
+    lockRef.current = true;
+    const first = cards.find((card) => card.id === nextFlipped[0]);
+    const second = cards.find((card) => card.id === nextFlipped[1]);
+
+    timerRef.current = setTimeout(() => {
+      if (first && second && first.value === second.value) {
+        const nextMatchedValues = matchedValues.includes(first.value) ? matchedValues : [...matchedValues, first.value];
+        setMatchedValues(nextMatchedValues);
+        setMessage(nextMatchedValues.length >= 2 ? "Đã ghép xong cả 2 cặp." : "Đúng cặp, tiếp tục cặp còn lại.");
+        if (nextMatchedValues.length >= 2) onComplete();
+      } else {
+        setMessage("Chưa đúng cặp, thử lại nhé.");
+      }
+      setFlipped([]);
+      lockRef.current = false;
+    }, 420);
+  };
+
+  return (
+    <div className="flex min-h-[150px] flex-col items-center justify-center gap-3">
+      <p className="text-xs font-bold text-[color:var(--neon-cyan)]">Thử lật cặp thẻ</p>
+      <div className="grid w-full max-w-[150px] grid-cols-2 gap-2">
+        {cards.map((card) => {
+          const isMatched = matchedValues.includes(card.value);
+          const isFlipped = flipped.includes(card.id) || isMatched;
+
+          return (
+            <button
+              key={card.id}
+              type="button"
+              aria-label={`Lật thẻ demo ${card.id}`}
+              onClick={() => pickCard(card.id)}
+              disabled={isMatched}
+              className={`aspect-square rounded-lg border text-2xl font-bold transition ${
+                isFlipped
+                  ? "border-[color:var(--neon-pink)] bg-[linear-gradient(135deg,#370fff,#8200ff)] text-white"
+                  : "border-[color:var(--neon-cyan)]/30 bg-black/60 text-[color:var(--neon-cyan)] hover:border-[color:var(--neon-cyan)]"
+              } ${isMatched ? "opacity-45" : ""}`}
+            >
+              {isFlipped ? card.value : "?"}
+            </button>
+          );
+        })}
+      </div>
+      <p className="min-h-5 text-xs text-[color:var(--text-muted)]">{message}</p>
+    </div>
+  );
+}
+
+function CatchPractice({ onComplete }: PracticeProps) {
+  const areaRef = useRef<HTMLDivElement>(null);
+  const completedRef = useRef(false);
+  const bucketXRef = useRef(20);
+  const ballYRef = useRef(0);
+  const [bucketX, setBucketX] = useState(20);
+  const [ballY, setBallY] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [message, setMessage] = useState("Kéo máng hoặc dùng A/D để hứng khối rơi.");
+
+  const moveBucket = (nextX: number) => {
+    const safeX = Math.max(10, Math.min(90, nextX));
+    bucketXRef.current = safeX;
+    setBucketX(safeX);
+  };
+
+  const getAreaHeight = useCallback(() => areaRef.current?.offsetHeight || PRACTICE_AREA_HEIGHT, []);
+
+  const getCaughtBallY = useCallback(() => {
+    const areaHeight = getAreaHeight();
+    const caughtTop = areaHeight - PRACTICE_BUCKET_BOTTOM - PRACTICE_BUCKET_HEIGHT - PRACTICE_BALL_SIZE * PRACTICE_BALL_VISIBLE_WHEN_CAUGHT;
+
+    return (caughtTop / areaHeight) * 100;
+  }, [getAreaHeight]);
+
+  useEffect(() => {
+    if (completedRef.current) return;
+
+    const timer = window.setInterval(() => {
+      if (completedRef.current) return;
+
+      const nextY = ballYRef.current + 2.2;
+      const areaHeight = getAreaHeight();
+      const bucketTop = areaHeight - PRACTICE_BUCKET_BOTTOM - PRACTICE_BUCKET_HEIGHT;
+      const ballBottom = (nextY / 100) * areaHeight + PRACTICE_BALL_SIZE;
+
+      if (ballBottom < bucketTop) {
+        ballYRef.current = nextY;
+        setBallY(nextY);
+        return;
+      }
+
+      if (Math.abs(bucketXRef.current - 50) <= 12) {
+        completedRef.current = true;
+        const caughtY = getCaughtBallY();
+        ballYRef.current = caughtY;
+        setBallY(caughtY);
+        setMessage("Đã hứng được khối tác vụ.");
+        onComplete();
+        return;
+      }
+
+      ballYRef.current = 0;
+      setBallY(0);
+      setMessage("Trượt rồi, căn máng gần giữa và thử lại.");
+    }, 40);
+
+    return () => window.clearInterval(timer);
+  }, [getAreaHeight, getCaughtBallY, onComplete]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key.toLowerCase() === "a" || event.key === "ArrowLeft") {
+        moveBucket(bucketXRef.current - 8);
+      }
+      if (event.key.toLowerCase() === "d" || event.key === "ArrowRight") {
+        moveBucket(bucketXRef.current + 8);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
+  const updateBucketFromPointer = (clientX: number) => {
+    const rect = areaRef.current?.getBoundingClientRect();
+    if (!rect) return;
+
+    const nextX = ((clientX - rect.left) / rect.width) * 100;
+    moveBucket(nextX);
+  };
+
+  return (
+    <div className="flex min-h-[170px] flex-col gap-3">
+      <p className="text-xs font-bold text-[color:var(--neon-cyan)]">Hứng 1 khối tác vụ rơi</p>
+      <div
+        ref={areaRef}
+        tabIndex={0}
+        onPointerDown={(event) => {
+          setDragging(true);
+          updateBucketFromPointer(event.clientX);
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }}
+        onPointerMove={(event) => {
+          if (dragging) updateBucketFromPointer(event.clientX);
+        }}
+        onPointerUp={(event) => {
+          setDragging(false);
+          if (event.currentTarget.hasPointerCapture(event.pointerId)) {
+            event.currentTarget.releasePointerCapture(event.pointerId);
+          }
+        }}
+        onPointerCancel={() => setDragging(false)}
+        onLostPointerCapture={() => setDragging(false)}
+        className="relative h-[112px] overflow-hidden rounded-lg border border-white/10 bg-black/70 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]"
+      >
+        <div
+          className="absolute z-0 h-4 w-4 rounded-full bg-[color:var(--neon-pink)] shadow-[0_0_10px_rgba(255,0,255,0.8)]"
+          style={{ left: "calc(50% - 8px)", top: `${ballY}%` }}
+        />
+        <div
+          className="absolute bottom-2 z-10 h-4 w-14 rounded-full bg-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.7)]"
+          style={{ left: `calc(${bucketX}% - 28px)` }}
+        />
+      </div>
+      <div className="flex justify-center gap-2">
+        <button type="button" className={`${buttonBaseClass} border-white/15 bg-white/10 text-white`} onClick={() => moveBucket(bucketXRef.current - 8)}>
+          A / ←
+        </button>
+        <button type="button" className={`${buttonBaseClass} border-white/15 bg-white/10 text-white`} onClick={() => moveBucket(bucketXRef.current + 8)}>
+          D / →
+        </button>
+      </div>
+      <p className="min-h-5 text-xs text-[color:var(--text-muted)]">{message}</p>
+    </div>
+  );
+}
+
+function WordPractice({ onComplete }: PracticeProps) {
+  const [message, setMessage] = useState("Chữ BLUE đang có màu đỏ, vậy đáp án là SAI.");
+  const [complete, setComplete] = useState(false);
+
+  const answer = (isCorrect: boolean) => {
+    if (complete) return;
+
+    if (isCorrect) {
+      setComplete(true);
+      setMessage("Đúng. Màu đỏ không khớp với nghĩa BLUE.");
+      onComplete();
+    } else {
+      setMessage("Chưa đúng. Hãy xét màu hiển thị, không chỉ đọc nghĩa chữ.");
     }
-    case "ht": {
-      return (
-        '<div style="font-size:11px;color:var(--neon-cyan);margin-bottom:4px;">Kéo máng để hứng bóng (demo chậm)</div>' +
-        '<div id="demo-ball-area" style="position:relative;width:100%;height:100px;background:rgba(0,0,0,0.6);border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.1);">' +
-        '<div id="demo-ball" style="position:absolute;width:14px;height:14px;background:#ff00ff;border-radius:50%;top:0;left:55px;box-shadow:0 0 8px rgba(255,0,255,0.6);pointer-events:none;"></div>' +
-        '<div id="demo-bucket" style="position:absolute;bottom:4px;width:44px;height:16px;background:#27ffff;border-radius:8px;left:40px;box-shadow:0 0 8px rgba(39,255,255,0.5);cursor:pointer;"></div>' +
-        "</div>" +
-        '<div id="demo-ball-result" style="margin-top:4px;font-size:11px;"></div>' +
-        "<script>" +
-        "(function(){var bucket=document.getElementById('demo-bucket');var ball=document.getElementById('demo-ball');" +
-        "var ballY=0;var bucketX=40;var isPressed=false;var lastX=0;var caught=false;" +
-        "bucket.onmousedown=function(e){isPressed=true;lastX=e.clientX;e.preventDefault();};" +
-        "bucket.ontouchstart=function(e){isPressed=true;lastX=e.touches[0].clientX;e.preventDefault();};" +
-        "document.addEventListener('mousemove',function(e){if(!isPressed||caught)return;bucketX+=e.clientX-lastX;" +
-        "bucketX=Math.max(0,Math.min(bucketX,180));bucket.style.left=bucketX+'px';lastX=e.clientX;});" +
-        "document.addEventListener('mouseup',function(){isPressed=false;});" +
-        "document.addEventListener('touchmove',function(e){if(!isPressed||caught)return;bucketX+=e.touches[0].clientX-lastX;" +
-        "bucketX=Math.max(0,Math.min(bucketX,180));bucket.style.left=bucketX+'px';lastX=e.touches[0].clientX;});" +
-        "document.addEventListener('touchend',function(){isPressed=false;});" +
-        "function drop(){if(caught)return;ballY+=0.25;ball.style.top=ballY+'px';" +
-        "var area=document.getElementById('demo-ball-area');if(!area)return;" +
-        "if(ballY>=area.offsetHeight-20){var ballLeft=55;" +
-        "if(ballLeft+14>bucketX&&ballLeft<bucketX+44){caught=true;document.getElementById('demo-ball-result').innerHTML='<span style=color:#39ff14>Đã hứng được!</span>';return;}" +
-        "ballY=0;ball.style.top='0';}requestAnimationFrame(drop);}requestAnimationFrame(drop);})();</script>"
-      );
+  };
+
+  return (
+    <div className="flex min-h-[150px] flex-col items-center justify-center gap-3">
+      <p className="text-xs font-bold text-[color:var(--neon-cyan)]">Màu và nghĩa có khớp không?</p>
+      <div className="text-3xl font-extrabold tracking-widest text-red-500">BLUE</div>
+      <div className="flex gap-2">
+        <button type="button" onClick={() => answer(false)} className={`${buttonBaseClass} border-[color:var(--neon-green)] bg-[color:var(--neon-green)] text-black`}>
+          ĐÚNG
+        </button>
+        <button type="button" onClick={() => answer(true)} className={`${buttonBaseClass} border-red-500 bg-red-600 text-white`}>
+          SAI
+        </button>
+      </div>
+      <p className="min-h-5 text-xs text-[color:var(--text-muted)]">{message}</p>
+    </div>
+  );
+}
+
+type Direction = "up" | "down" | "left" | "right";
+
+function ReverseArrowPractice({ onComplete }: PracticeProps) {
+  const [message, setMessage] = useState("Mũi tên đang chỉ lên, hãy chọn hướng ngược lại.");
+  const [complete, setComplete] = useState(false);
+
+  const choose = (direction: Direction) => {
+    if (complete) return;
+
+    if (direction === "down") {
+      setComplete(true);
+      setMessage("Chính xác. Xuống là hướng ngược của lên.");
+      onComplete();
+    } else {
+      setMessage("Chưa đúng, hãy chọn hướng ngược lại với mũi tên.");
     }
-    case "nc": {
-      const demoWord = '<span style="color:#e74c3c;font-weight:bold;font-size:18px;">BLUE</span>';
-      return (
-        '<div style="font-size:11px;color:var(--neon-cyan);margin-bottom:6px;">Chữ "BLUE" màu đỏ → SAI (không trùng)</div>' +
-        '<div style="margin:8px 0;">' +
-        demoWord +
-        "</div>" +
-        '<div style="display:flex;gap:8px;justify-content:center;">' +
-        '<button id="demo-word-yes" style="padding:6px 18px;background:#39ff14;color:#000;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">[Y] ĐÚNG</button>' +
-        '<button id="demo-word-no" style="padding:6px 18px;background:#e74c3c;color:#fff;border:none;border-radius:6px;font-weight:bold;cursor:pointer;">[N] SAI</button>' +
-        "</div>" +
-        '<div id="demo-word-result" style="margin-top:6px;font-size:11px;"></div>' +
-        "<script>" +
-        "(function(){" +
-        "document.getElementById('demo-word-yes').onclick=function(){document.getElementById('demo-word-result').innerHTML='<span style=color:#e74c3c>❌ Sai! Chữ BLUE màu đỏ — không trùng!</span>';};" +
-        "document.getElementById('demo-word-no').onclick=function(){document.getElementById('demo-word-result').innerHTML='<span style=color:#39ff14>✅ Đúng! Chữ BLUE màu đỏ — màu và nghĩa không trùng.</span>';};" +
-        "})();</script>"
-      );
-    }
-    case "px": {
-      return (
-        '<div style="font-size:11px;color:var(--neon-cyan);margin-bottom:6px;">Mũi tên ↑ → Ấn ↓ (ngược lại)</div>' +
-        '<div style="font-size:40px;margin:8px 0;">⬆️</div>' +
-        '<div style="display:flex;flex-direction:column;align-items:center;gap:2px;">' +
-        '<button id="demo-arr-up" style="width:40px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">▲</button>' +
-        '<div style="display:flex;gap:2px;">' +
-        '<button id="demo-arr-left" style="width:40px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">◀</button>' +
-        '<button id="demo-arr-down" style="width:40px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">▼</button>' +
-        '<button id="demo-arr-right" style="width:40px;height:32px;background:rgba(255,255,255,0.1);border:none;border-radius:4px;color:white;font-weight:bold;cursor:pointer;">▶</button>' +
-        "</div></div>" +
-        '<div id="demo-arr-result" style="margin-top:6px;font-size:11px;"></div>' +
-        "<script>" +
-        "(function(){var correct=false;" +
-        "document.getElementById('demo-arr-down').onclick=function(){document.getElementById('demo-arr-result').innerHTML='<span style=color:#39ff14>✅ Chính xác! ↓ là ngược của ↑</span>';};" +
-        "['demo-arr-up','demo-arr-left','demo-arr-right'].forEach(function(id){document.getElementById(id).onclick=function(){document.getElementById('demo-arr-result').innerHTML='<span style=color:#e74c3c>❌ ↑ là ngược của ↓. Hãy ấn hướng ngược lại!</span>';};});" +
-        "})();</script>"
-      );
-    }
-    default:
-      return '<p style="color:var(--text-muted);">Không có nội dung thử nghiệm.</p>';
-  }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const keyMap: Record<string, Direction> = {
+        ArrowUp: "up",
+        ArrowLeft: "left",
+        ArrowDown: "down",
+        ArrowRight: "right",
+      };
+      const direction = keyMap[event.key];
+      if (direction) choose(direction);
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  });
+
+  return (
+    <div className="flex min-h-[170px] flex-col items-center justify-center gap-3">
+      <p className="text-xs font-bold text-[color:var(--neon-cyan)]">Chọn hướng ngược lại</p>
+      <div className="text-5xl text-white">⬆</div>
+      <div className="grid grid-cols-3 gap-2">
+        <span />
+        <ArrowButton label="▲" onClick={() => choose("up")} />
+        <span />
+        <ArrowButton label="◀" onClick={() => choose("left")} />
+        <ArrowButton label="▼" onClick={() => choose("down")} />
+        <ArrowButton label="▶" onClick={() => choose("right")} />
+      </div>
+      <p className="min-h-5 text-xs text-[color:var(--text-muted)]">{message}</p>
+    </div>
+  );
+}
+
+function ArrowButton({ label, onClick }: { label: string; onClick: () => void }) {
+  return (
+    <button type="button" onClick={onClick} className="grid h-10 w-10 place-items-center rounded border border-white/15 bg-white/10 text-sm font-bold text-white transition hover:border-[color:var(--neon-cyan)] hover:text-[color:var(--neon-cyan)]">
+      {label}
+    </button>
+  );
 }

@@ -11,6 +11,7 @@ interface GameSummaryProps {
   totalScore: number;
   totalFails: number;
   currentLevel: number;
+  maxLevel?: number;
   gameStartTime: number | null;
   gameScores: GameScores;
   gameFailures: GameFailures;
@@ -38,6 +39,7 @@ export default function GameSummary({
   totalScore,
   totalFails,
   currentLevel,
+  maxLevel = VICTORY_LEVEL,
   gameStartTime,
   gameScores,
   gameFailures,
@@ -120,7 +122,7 @@ export default function GameSummary({
             ⏱ Thời gian: {mins}m {secs}s
           </p>
           <p className="text-[color:var(--neon-purple)] font-bold">
-            📊 Cấp đạt được: {currentLevel} / {VICTORY_LEVEL}
+            📊 Cấp đạt được: {currentLevel} / {maxLevel}
           </p>
         </div>
 
@@ -165,7 +167,7 @@ export default function GameSummary({
             onClick={onClose}
             className="min-h-12 rounded-lg border border-white/10 bg-transparent text-white/60 font-bold hover:text-white hover:bg-white/5 transition"
           >
-            Quay về cấu hình
+            Quay về Nhiệm vụ hệ thống
           </button>
         </div>
       </div>

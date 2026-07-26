@@ -9,7 +9,6 @@ type Direction = (typeof DIRECTIONS)[number];
 
 const OPPOSITES: Record<Direction, Direction> = { up: "down", down: "up", left: "right", right: "left" };
 const ARROWS: Record<Direction, string> = { up: "⬆️", down: "⬇️", left: "⬅️", right: "➡️" };
-const DIR_LABELS: Record<Direction, string> = { up: "↑ LÊN", down: "↓ XUỐNG", left: "← TRÁI", right: "→ PHẢI" };
 
 function getTimerDuration(level: number): number {
   return Math.max(18, 30 - (level - 1));
@@ -117,23 +116,15 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
       let direction: Direction | null = null;
       switch (e.key) {
         case "ArrowUp":
-        case "w":
-        case "W":
           direction = "up";
           break;
         case "ArrowDown":
-        case "s":
-        case "S":
           direction = "down";
           break;
         case "ArrowLeft":
-        case "a":
-        case "A":
           direction = "left";
           break;
         case "ArrowRight":
-        case "d":
-        case "D":
           direction = "right";
           break;
       }
@@ -176,9 +167,9 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
         className={`flex flex-col items-center justify-center h-[140px] border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/45 rounded-lg p-2 transition-colors`}
       >
         <p className="font-mono text-xs text-[color:var(--text-muted)] mb-2">ẤN HƯỚNG NGƯỢC LẠI:</p>
-        <div className={`text-3xl font-extrabold tracking-wide ${errorFlash ? "text-red-500" : "text-white"}`}>
+        {/* <div className={`text-3xl font-extrabold tracking-wide ${errorFlash ? "text-red-500" : "text-white"}`}>
           {DIR_LABELS[currentDir]}
-        </div>
+        </div> */}
         <div className="text-5xl mt-1">{ARROWS[currentDir]}</div>
       </div>
 
@@ -216,7 +207,7 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
 
       <div className="text-center mt-2">
         <span className="font-mono text-[10px] text-[color:var(--text-muted)]">
-          <kbd className="bg-[color:var(--surface)] px-1 rounded">↑↓←→</kbd> hoặc <kbd className="bg-[color:var(--surface)] px-1 rounded">WASD</kbd>
+          <kbd className="bg-[color:var(--surface)] px-1 rounded">↑↓←→</kbd>
         </span>
       </div>
     </div>

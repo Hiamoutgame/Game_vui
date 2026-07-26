@@ -2,7 +2,7 @@
 
 import { useState, useCallback, useRef, Suspense, useMemo, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useGameEngine } from "./game-engine";
 import MemoryGame from "./memory-game";
 import BallGame from "./ball-game";
@@ -14,6 +14,7 @@ import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL } from "./types";
 import type { GameId } from "./types";
 
 function GamePlayContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const taskQuery = searchParams.get("tasks");
   const demoParam = searchParams.get("demo");
@@ -29,8 +30,9 @@ function GamePlayContent() {
   const [engine, actions] = useGameEngine();
 
   // Demo mode
-  const initialDemo = demoParam === "single" || demoParam === "multi" ? (demoParam as "single" | "multi") : null;
-  const [demoMode, setDemoMode] = useState<"single" | "multi" | null>(initialDemo);
+  const isMultiTrial = demoParam === "multi";
+  const initialDemo = demoParam === "single" ? "single" : null;
+  const [demoMode, setDemoMode] = useState<"single" | null>(initialDemo);
 
   // Per-game penalty keys (incremented on fail to trigger child reset)
   const [penaltyKeys, setPenaltyKeys] = useState<Record<GameId, number>>({ km: 0, ht: 0, nc: 0, px: 0 });
@@ -46,7 +48,7 @@ function GamePlayContent() {
 
   const startGame = useCallback(() => {
     startedRef.current = true;
-    if (demoMode === "multi") {
+    if (isMultiTrial) {
       actions.startGame(activeTaskIds, 4);
     } else {
       actions.startGame(activeTaskIds);
@@ -54,18 +56,18 @@ function GamePlayContent() {
     setShowSummary(false);
     setPenaltyKeys({ km: 0, ht: 0, nc: 0, px: 0 });
     setErrorFlash(false);
-  }, [activeTaskIds, demoMode, actions]);
+  }, [activeTaskIds, isMultiTrial, actions]);
 
   // Auto-start if no demo
   useEffect(() => {
     if (!startedRef.current && !initialDemo) {
       startedRef.current = true;
       setTimeout(() => {
-        if (demoMode === "multi") actions.startGame(activeTaskIds, 4);
+        if (isMultiTrial) actions.startGame(activeTaskIds, 4);
         else actions.startGame(activeTaskIds);
       }, 0);
     }
-  }, [initialDemo, demoMode, activeTaskIds, actions]);
+  }, [initialDemo, isMultiTrial, activeTaskIds, actions]);
 
   // Victory detection
   useEffect(() => {
@@ -80,12 +82,8 @@ function GamePlayContent() {
 
   const handleDemoFinish = useCallback(() => {
     setDemoMode(null);
-    if (demoMode === "single") {
-      window.location.href = "/mission";
-    } else {
-      startGame();
-    }
-  }, [demoMode, startGame]);
+    router.replace("/mission");
+  }, [router]);
 
   const handleScore = useCallback(
     (gameId: GameId) => actions.addScore(gameId),
@@ -127,7 +125,7 @@ function GamePlayContent() {
   if (demoMode) {
     return (
       <main id="main-content" className="px-5 py-10 md:px-10 lg:px-24 min-h-[80vh] flex items-center justify-center">
-        <GameDemo gameList={activeTaskIds} standalone={demoMode === "single"} isOpen={true} onFinish={handleDemoFinish} />
+        <GameDemo gameList={activeTaskIds} standalone={true} isOpen={true} onFinish={handleDemoFinish} />
       </main>
     );
   }
@@ -136,6 +134,7 @@ function GamePlayContent() {
   const isHt = activeTaskIds.includes("ht");
   const isNc = activeTaskIds.includes("nc");
   const isPx = activeTaskIds.includes("px");
+  const maxLevel = isMultiTrial ? 4 : VICTORY_LEVEL;
 
   return (
     <main id="main-content" className="px-5 py-10 md:px-10 lg:px-24">
@@ -159,7 +158,7 @@ function GamePlayContent() {
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Cấp độ</p>
               <span className="inline-block bg-[color:var(--neon-purple)] text-white px-4 py-1 rounded-full font-bold text-sm">
-                Cấp {engine.currentLevel}/{VICTORY_LEVEL}
+                Cấp {engine.currentLevel}/{maxLevel}
               </span>
             </div>
             <div>
@@ -193,7 +192,7 @@ function GamePlayContent() {
             {isKm && <span>[Phím 1-9,0 / Numpad]: Lật bài</span>}
             {isHt && <span>[A/D hoặc Giữ chuột kéo]: Hứng tác vụ</span>}
             {isNc && <span>[Y]: Đúng / [N]: Sai</span>}
-            {isPx && <span>[Mũi Tên / WASD]: Phản xạ ngược</span>}
+            {isPx && <span>[Mũi Tên]: Phản xạ ngược</span>}
           </div>
         </div>
 
@@ -330,6 +329,7 @@ function GamePlayContent() {
         totalScore={engine.totalScore}
         totalFails={engine.totalFails}
         currentLevel={engine.currentLevel}
+        maxLevel={maxLevel}
         gameStartTime={engine.gameStartTime}
         gameScores={engine.gameScores}
         gameFailures={engine.gameFailures}

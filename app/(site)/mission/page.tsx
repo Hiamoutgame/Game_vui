@@ -7,7 +7,6 @@ import Link from "next/link";
 const allTasks = [
   {
     id: "km",
-    icon: "KM",
     title: "Ký ức phân mảnh",
     desc: "Lật đúng các cặp ký hiệu trước khi thời gian cạn.",
     target: "Lật đúng các cặp ký hiệu trước khi thời gian cạn.",
@@ -16,7 +15,6 @@ const allTasks = [
   },
   {
     id: "ht",
-    icon: "HT",
     title: "Hứng tác vụ rơi",
     desc: "Điều khiển máng hứng những việc đang rơi xuống.",
     target: "Bắt đúng các khối tác vụ đang rơi từ trên xuống.",
@@ -25,7 +23,6 @@ const allTasks = [
   },
   {
     id: "nc",
-    icon: "NC",
     title: "Nhiễu màu-chữ",
     desc: "Chọn ĐÚNG hoặc SAI khi chữ và màu cố tình đánh lừa bạn.",
     target: "Chỉ định đúng tên màu sắc của chữ, bất chấp ý nghĩa của chữ.",
@@ -34,7 +31,6 @@ const allTasks = [
   },
   {
     id: "px",
-    icon: "PX",
     title: "Phản xạ ngược chiều",
     desc: "Phản hồi theo hướng ngược lại với mũi tên hệ thống đưa ra.",
     target: "Nhập hướng đi ngược lại hoàn toàn so với chỉ báo.",
@@ -43,8 +39,57 @@ const allTasks = [
   }
 ];
 
+const requiredTaskCount = allTasks.length;
+const defaultSelectedTasks = allTasks.map((task) => task.id);
+
+function TaskGameIcon({ id }: { id: string }) {
+  if (id === "km") {
+    return (
+      <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+        <rect x="4" y="4" width="6" height="6" rx="1.4" />
+        <rect x="14" y="4" width="6" height="6" rx="1.4" />
+        <rect x="4" y="14" width="6" height="6" rx="1.4" />
+        <rect x="14" y="14" width="6" height="6" rx="1.4" />
+        <path d="M6.2 7h1.6M16.2 7h1.6M6.2 17h1.6M16.2 17h1.6" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (id === "ht") {
+    return (
+      <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+        <path d="M12 3v6" strokeLinecap="round" />
+        <circle cx="12" cy="11" r="2.2" fill="currentColor" stroke="none" />
+        <path d="M5 16h14l-2 4H7l-2-4z" strokeLinejoin="round" />
+        <path d="M7 16c.9-1.6 2.6-2.5 5-2.5s4.1.9 5 2.5" strokeLinecap="round" />
+      </svg>
+    );
+  }
+
+  if (id === "nc") {
+    return (
+      <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+        <path d="M5 18 10.5 6h2L18 18" strokeLinecap="round" strokeLinejoin="round" />
+        <path d="M7.4 13.2h8.9" strokeLinecap="round" />
+        <circle cx="6" cy="20" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="12" cy="20" r="1.4" fill="currentColor" stroke="none" />
+        <circle cx="18" cy="20" r="1.4" fill="currentColor" stroke="none" />
+      </svg>
+    );
+  }
+
+  return (
+    <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden="true">
+      <path d="M8 5v14" strokeLinecap="round" />
+      <path d="m5 8 3-3 3 3" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M16 5v14" strokeLinecap="round" />
+      <path d="m13 16 3 3 3-3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function MissionPage() {
-  const [selectedTasks, setSelectedTasks] = useState<string[]>(["km", "ht"]);
+  const [selectedTasks, setSelectedTasks] = useState<string[]>(defaultSelectedTasks);
   const [activeTutorial, setActiveTutorial] = useState<string>("km");
 
   const toggleTask = (id: string) => {
@@ -54,7 +99,8 @@ export default function MissionPage() {
   };
 
   const tutorialTask = allTasks.find(t => t.id === activeTutorial) || allTasks[0];
-  const canStart = selectedTasks.length >= 2;
+  const canStart = selectedTasks.length === requiredTaskCount;
+  const canTryMulti = selectedTasks.length > 0;
 
   return (
     <main id="main-content" className="px-5 py-16 md:px-10 lg:px-24 min-h-[80vh]">
@@ -63,13 +109,13 @@ export default function MissionPage() {
         <div className="space-y-6">
           <div className="space-y-2">
             <p className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-[color:var(--neon-cyan)]">
-              CHỌN TÁC VỤ // TỐI THIỂU 2
+              CHỌN TÁC VỤ // BẮT BUỘC 4/4
             </p>
             <h1 className="font-[family-name:var(--font-heading)] text-3xl font-bold uppercase text-white md:text-4xl">
               Cấu hình vũ trụ cần xử lý
             </h1>
             <p className="text-[color:var(--text-muted)] text-base leading-7 max-w-2xl">
-              Chọn càng nhiều tác vụ, độ khó càng cao. Nếu chưa đủ 2 tác vụ, hệ thống sẽ giữ nút khởi động ở trạng thái chờ.
+              Cần chọn đủ cả 4 tác vụ để khởi động mô phỏng. Nếu thiếu bất kỳ game nào, hệ thống sẽ giữ nút bắt đầu ở trạng thái chờ.
             </p>
           </div>
 
@@ -88,8 +134,9 @@ export default function MissionPage() {
                   <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border font-mono font-bold transition-colors ${isSelected ? "border-[color:var(--neon-cyan)]/50 bg-[color:var(--neon-blue)] text-white" : "border-white/10 bg-white/5 text-[color:var(--text-muted)]"}`}>
                     0{idx + 1}
                   </div>
-                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border transition-colors font-[family-name:var(--font-heading)] font-bold text-lg ${isSelected ? "border-[color:var(--neon-cyan)] bg-black text-[color:var(--neon-cyan)]" : "border-white/20 bg-black text-[color:var(--text-muted)]"}`}>
-                    {task.icon}
+                  <div className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border transition-colors ${isSelected ? "border-[color:var(--neon-cyan)] bg-black text-[color:var(--neon-cyan)] shadow-[0_0_14px_rgba(39,255,255,0.18)]" : "border-white/20 bg-black text-[color:var(--text-muted)]"}`}>
+                    <TaskGameIcon id={task.id} />
+                    <span className="sr-only">{task.title}</span>
                   </div>
                   <div className="flex-1">
                     <h3 className={`font-bold text-lg transition-colors ${isSelected ? "text-white" : "text-white/80 group-hover:text-white"}`}>
@@ -102,13 +149,6 @@ export default function MissionPage() {
                   <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded border-2 transition-colors ${isSelected ? "border-[color:var(--neon-cyan)] bg-[color:var(--neon-cyan)] text-black" : "border-[color:var(--neon-cyan)]/50 bg-transparent text-transparent"}`}>
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                   </div>
-
-                  {/* Drag Handle */}
-                  <div className="flex flex-col gap-1 px-2 opacity-30 hover:opacity-100 transition-opacity cursor-grab">
-                    <div className="h-0.5 w-4 rounded-full bg-white" />
-                    <div className="h-0.5 w-4 rounded-full bg-white" />
-                    <div className="h-0.5 w-4 rounded-full bg-white" />
-                  </div>
                 </div>
               );
             })}
@@ -117,7 +157,7 @@ export default function MissionPage() {
             {!canStart && (
               <div className="flex items-center gap-3 rounded-lg border border-[color:var(--neon-pink)]/40 bg-[color:var(--surface)]/60 px-4 py-3 text-sm text-[color:var(--text-muted)] mt-2">
                 <span className="text-[color:var(--neon-pink)]">⚠</span>
-                Vui lòng chọn thêm {2 - selectedTasks.length} tác vụ để khởi động mô phỏng.
+                Vui lòng chọn thêm {requiredTaskCount - selectedTasks.length} tác vụ để bắt đầu nhiệm vụ.
               </div>
             )}
           </div>
@@ -151,13 +191,19 @@ export default function MissionPage() {
 
           <div className="flex flex-col gap-3 pt-4 border-t border-[color:var(--neon-cyan)]/20">
             <Link
-              href={canStart ? `/mission/play?tasks=${selectedTasks.join(",")}` : "#"}
+              href={canStart ? `/mission/play?tasks=${selectedTasks.join(",")}` : "/mission"}
+              aria-disabled={!canStart}
+              onClick={(event) => {
+                if (!canStart) {
+                  event.preventDefault();
+                }
+              }}
               className={`inline-flex min-h-12 items-center justify-center rounded-lg border px-6 font-bold transition-all duration-300 ${canStart ? "border-[color:var(--neon-cyan)] bg-[color:var(--neon-blue)] text-white shadow-[0_0_20px_rgba(39,255,255,0.3)] hover:bg-[color:var(--neon-purple)]" : "cursor-not-allowed border-white/10 bg-white/5 text-white/40"}`}
             >
               Bắt đầu nhiệm vụ
             </Link>
             <button
-              onClick={() => setSelectedTasks(["km", "ht"])}
+              onClick={() => setSelectedTasks(defaultSelectedTasks)}
               className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[color:var(--neon-pink)]/60 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold transition hover:border-[color:var(--neon-pink)] hover:text-white"
             >
               Đặt lại mặc định
@@ -169,8 +215,18 @@ export default function MissionPage() {
               Chơi thử đơn tác vụ
             </Link>
             <Link
-              href="/mission/play?demo=multi"
-              className="inline-flex min-h-12 items-center justify-center rounded-lg border border-[color:var(--neon-purple)]/60 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold transition hover:border-[color:var(--neon-purple)] hover:text-white"
+              href={canTryMulti ? `/mission/play?demo=multi&tasks=${selectedTasks.join(",")}` : "/mission"}
+              aria-disabled={!canTryMulti}
+              onClick={(event) => {
+                if (!canTryMulti) {
+                  event.preventDefault();
+                }
+              }}
+              className={`inline-flex min-h-12 items-center justify-center rounded-lg border font-bold transition ${
+                canTryMulti
+                  ? "border-[color:var(--neon-purple)]/60 bg-[color:var(--surface)] text-[color:var(--text-muted)] hover:border-[color:var(--neon-purple)] hover:text-white"
+                  : "cursor-not-allowed border-white/10 bg-white/5 text-white/40"
+              }`}
             >
               Chơi thử đa tác vụ
             </Link>

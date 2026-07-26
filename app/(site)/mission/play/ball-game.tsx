@@ -20,6 +20,21 @@ function getFallTime(level: number): number {
   return Math.max(5, 10 - (level - 1) * 0.5);
 }
 
+const BALL_SIZE = 20;
+const BUCKET_WIDTH = 80;
+const BUCKET_HEIGHT = 16;
+const BUCKET_BOTTOM = 12;
+const BALL_VISIBLE_WHEN_CAUGHT = 0.75;
+const CATCH_HOLD_MS = 260;
+
+function getCaughtBallY(areaHeight: number) {
+  return areaHeight - BUCKET_BOTTOM - BUCKET_HEIGHT - BALL_SIZE * BALL_VISIBLE_WHEN_CAUGHT;
+}
+
+function getRandomBallX(areaWidth: number) {
+  return Math.random() * Math.max(0, areaWidth - BALL_SIZE);
+}
+
 export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: BallGameProps) {
   const [ballPos, setBallPos] = useState({ x: 50, y: 0 });
   const [bucketPos, setBucketPos] = useState(50);
@@ -27,6 +42,7 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
   const areaRef = useRef<HTMLDivElement>(null);
   const ballRef = useRef({ x: 50, y: 0 });
   const frameRef = useRef<number | null>(null);
+  const caughtTimeoutRef = useRef<number | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isPressedRef = useRef(false);
 
@@ -65,33 +81,43 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
       }
 
       const areaHeight = areaRef.current.offsetHeight;
-      const ballBottom = ballRef.current.y + 20;
+      const areaWidth = areaRef.current.offsetWidth;
+      const ballBottom = ballRef.current.y + BALL_SIZE;
 
       // Check collision at bucket level
-      const bucketTop = areaHeight - 33;
+      const bucketTop = areaHeight - BUCKET_BOTTOM - BUCKET_HEIGHT;
       if (ballBottom >= bucketTop) {
         const ballLeft = ballRef.current.x;
         const bPos = bucketPosRef.current;
-        // bucket width ~50px, map percentage to px
-        const bucketLeftPx = (bPos / 100) * areaRef.current.offsetWidth - 25;
-        const bucketRightPx = bucketLeftPx + 50;
+        const bucketLeftPx = (bPos / 100) * areaWidth - BUCKET_WIDTH / 2;
+        const bucketRightPx = bucketLeftPx + BUCKET_WIDTH;
 
-        if (ballLeft + 20 > bucketLeftPx && ballLeft < bucketRightPx) {
+        if (ballLeft + BALL_SIZE > bucketLeftPx && ballLeft < bucketRightPx) {
           // Caught!
           soundSystem.ballCorrect();
+          const caughtX = Math.max(bucketLeftPx, Math.min(bucketRightPx - BALL_SIZE, ballLeft));
+          ballRef.current = { x: caughtX, y: getCaughtBallY(areaHeight) };
+          setBallPos({ ...ballRef.current });
           onScore();
-          ballRef.current = { x: Math.random() * (areaRef.current.offsetWidth - 20), y: 0 };
-          speedRef.current = calcSpeed();
+          caughtTimeoutRef.current = window.setTimeout(() => {
+            if (!areaRef.current || !isPlayingRef.current) return;
+
+            ballRef.current = { x: getRandomBallX(areaRef.current.offsetWidth), y: 0 };
+            setBallPos({ ...ballRef.current });
+            speedRef.current = calcSpeed();
+            frameRef.current = requestAnimationFrame(animate);
+          }, CATCH_HOLD_MS);
+          return;
         } else {
           // Missed
           onFail();
-          ballRef.current = { x: Math.random() * (areaRef.current.offsetWidth - 20), y: 0 };
+          ballRef.current = { x: getRandomBallX(areaWidth), y: 0 };
           speedRef.current = calcSpeed();
         }
-      } else if (ballRef.current.y >= areaHeight - 20) {
+      } else if (ballRef.current.y >= areaHeight - BALL_SIZE) {
         // Past bottom
         onFail();
-        ballRef.current = { x: Math.random() * (areaRef.current.offsetWidth - 20), y: 0 };
+        ballRef.current = { x: getRandomBallX(areaWidth), y: 0 };
         speedRef.current = calcSpeed();
       }
 
@@ -101,12 +127,13 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
 
     // Reset ball
     if (areaRef.current) {
-      ballRef.current = { x: Math.random() * (areaRef.current.offsetWidth - 20), y: 0 };
+      ballRef.current = { x: getRandomBallX(areaRef.current.offsetWidth), y: 0 };
     }
     frameRef.current = requestAnimationFrame(animate);
 
     return () => {
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
+      if (caughtTimeoutRef.current) window.clearTimeout(caughtTimeoutRef.current);
     };
   }, [isPlaying, isThisComplete, onScore, onFail, calcSpeed]);
 
@@ -204,14 +231,14 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
       >
         {/* Ball */}
         <div
-          className={`absolute h-5 w-5 rounded-full ${
+          className={`absolute z-0 h-5 w-5 rounded-full ${
             errorFlash ? "bg-red-500 shadow-[0_0_12px_rgba(239,68,68,0.8)]" : "bg-[color:var(--neon-pink)] shadow-[0_0_12px_rgba(255,0,255,0.8)]"
           } pointer-events-none transition-colors`}
           style={{ left: `${ballPos.x}px`, top: `${ballPos.y}px` }}
         />
         {/* Bucket */}
         <div
-          className={`absolute bottom-3 h-4 w-20 rounded-full ${
+          className={`absolute bottom-3 z-10 h-4 w-20 rounded-full ${
             errorFlash ? "bg-red-400" : "bg-[color:var(--neon-cyan)] shadow-[0_0_12px_rgba(39,255,255,0.7)]"
           } pointer-events-none transition-colors`}
           style={{ left: `calc(${bucketPos}% - 40px)` }}
