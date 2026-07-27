@@ -64,6 +64,12 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const pathname = usePathname();
+
+  if (pathname === "/mission/play") {
+    return null;
+  }
+
   return (
     <footer className="relative overflow-hidden border-t border-[color:rgba(39,255,255,0.35)] bg-[linear-gradient(180deg,#0c0228_0%,var(--background)_100%)] px-5 py-14 md:px-10 lg:px-24">
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(90deg,rgba(39,255,255,0.035)_1px,transparent_1px),linear-gradient(rgba(130,0,255,0.04)_1px,transparent_1px)] bg-[size:48px_48px]" aria-hidden="true" />

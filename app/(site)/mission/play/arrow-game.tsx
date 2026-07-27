@@ -15,6 +15,7 @@ function getTimerDuration(level: number): number {
 }
 
 interface ArrowGameProps {
+  compact?: boolean;
   globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
@@ -26,12 +27,13 @@ interface ArrowGameProps {
   onPenaltyReset: () => void;
 }
 
-export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: ArrowGameProps) {
+export default function ArrowGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: ArrowGameProps) {
   const [currentDir, setCurrentDir] = useState<Direction>("up");
   const [timeLeft, setTimeLeft] = useState(30);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
+  const timedOutRef = useRef(false);
 
   // Sync refs after render
   useEffect(() => {
@@ -42,6 +44,7 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     const duration = getTimerDuration(globalLevel);
+    timedOutRef.current = false;
     setTimeLeft(duration);
 
     timerRef.current = setInterval(() => {
@@ -50,7 +53,7 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
         if (next <= 0) {
           if (timerRef.current) clearInterval(timerRef.current);
           if (isPlayingRef.current && !isCompleteRef.current) {
-            onFail();
+            timedOutRef.current = true;
           }
           return 0;
         }
@@ -60,7 +63,13 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
         return next;
       });
     }, 1000);
-  }, [globalLevel, onFail]);
+  }, [globalLevel]);
+
+  useEffect(() => {
+    if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
+    timedOutRef.current = false;
+    onFail();
+  }, [timeLeft, isPlaying, isComplete, onFail]);
 
   const pickRandom = () => {
     setCurrentDir(DIRECTIONS[Math.floor(Math.random() * 4)]);
@@ -144,7 +153,7 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
 
   if (isThisComplete) {
     return (
-      <div className="rounded-lg bg-black/60 p-5 border border-[color:var(--neon-green)] flex items-center justify-center min-h-[300px]">
+      <div className={`rounded-lg bg-black/60 border border-[color:var(--neon-green)] flex items-center justify-center ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
         <div className="text-center text-[color:var(--neon-green)] font-bold">
           <div className="text-2xl mb-2">✅</div>
           <div>Hoàn thành!</div>
@@ -155,60 +164,50 @@ export default function ArrowGame({ globalLevel, gameScore, isPlaying, isComplet
   }
 
   return (
-    <div className="rounded-lg bg-black/60 p-5 border border-white/5 min-h-[300px] flex flex-col justify-between">
+    <div className={`rounded-lg bg-black/60 border border-white/5 flex flex-col justify-between ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
       {/* Timer */}
-      <div className="flex items-center justify-between w-full mb-3">
+      <div className={`flex items-center justify-between w-full ${compact ? "mb-1" : "mb-2"}`}>
         <span className="font-mono text-xs text-[color:var(--text-muted)]">⏱</span>
         <span className={`font-mono text-sm font-bold ${timerClass}`}>{Math.ceil(timeLeft)}s</span>
       </div>
 
       {/* Arrow display */}
       <div
-        className={`flex flex-col items-center justify-center h-[140px] border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/45 rounded-lg p-2 transition-colors`}
+        className={`flex flex-col items-center justify-center ${compact ? "h-[120px]" : "h-[95px]"} border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/45 rounded-lg p-2 transition-colors`}
       >
-        <p className="font-mono text-xs text-[color:var(--text-muted)] mb-2">ẤN HƯỚNG NGƯỢC LẠI:</p>
-        {/* <div className={`text-3xl font-extrabold tracking-wide ${errorFlash ? "text-red-500" : "text-white"}`}>
-          {DIR_LABELS[currentDir]}
-        </div> */}
-        <div className="text-5xl mt-1">{ARROWS[currentDir]}</div>
+        <div className={`${compact ? "text-6xl mt-1" : "text-4xl mt-1"}`}>{ARROWS[currentDir]}</div>
       </div>
 
       {/* Arrow buttons */}
-      <div className="flex flex-col items-center gap-1.5 mt-3">
+      <div className="flex flex-col items-center gap-1 mt-2">
         <div className="flex justify-center">
           <button
             onClick={() => handleSelect("up")}
-            className={`bg-white/10 hover:bg-white/20 text-white h-10 w-16 rounded-lg font-bold text-lg transition ${errorFlash ? "border border-red-500/50" : ""}`}
+            className={`bg-white/10 hover:bg-white/20 text-white ${compact ? "h-10 w-16 text-xl" : "h-8 w-12 text-base"} rounded-lg font-bold transition ${errorFlash ? "border border-red-500/50" : ""}`}
           >
             ▲
           </button>
         </div>
-        <div className="flex justify-center gap-1.5">
+        <div className="flex justify-center gap-1">
           <button
             onClick={() => handleSelect("left")}
-            className={`bg-white/10 hover:bg-white/20 text-white h-10 w-16 rounded-lg font-bold text-lg transition ${errorFlash ? "border border-red-500/50" : ""}`}
+            className={`bg-white/10 hover:bg-white/20 text-white ${compact ? "h-10 w-16 text-xl" : "h-8 w-12 text-base"} rounded-lg font-bold transition ${errorFlash ? "border border-red-500/50" : ""}`}
           >
             ◀
           </button>
           <button
             onClick={() => handleSelect("down")}
-            className={`bg-white/10 hover:bg-white/20 text-white h-10 w-16 rounded-lg font-bold text-lg transition ${errorFlash ? "border border-red-500/50" : ""}`}
+            className={`bg-white/10 hover:bg-white/20 text-white ${compact ? "h-10 w-16 text-xl" : "h-8 w-12 text-base"} rounded-lg font-bold transition ${errorFlash ? "border border-red-500/50" : ""}`}
           >
             ▼
           </button>
           <button
             onClick={() => handleSelect("right")}
-            className={`bg-white/10 hover:bg-white/20 text-white h-10 w-16 rounded-lg font-bold text-lg transition ${errorFlash ? "border border-red-500/50" : ""}`}
+            className={`bg-white/10 hover:bg-white/20 text-white ${compact ? "h-10 w-16 text-xl" : "h-8 w-12 text-base"} rounded-lg font-bold transition ${errorFlash ? "border border-red-500/50" : ""}`}
           >
             ▶
           </button>
         </div>
-      </div>
-
-      <div className="text-center mt-2">
-        <span className="font-mono text-[10px] text-[color:var(--text-muted)]">
-          <kbd className="bg-[color:var(--surface)] px-1 rounded">↑↓←→</kbd>
-        </span>
       </div>
     </div>
   );

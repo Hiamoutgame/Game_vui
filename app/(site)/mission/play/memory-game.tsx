@@ -34,6 +34,7 @@ function shuffleArray<T>(arr: T[]): T[] {
 const NUMPAD_POSITIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 0];
 
 interface MemoryGameProps {
+  compact?: boolean;
   globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
@@ -45,7 +46,7 @@ interface MemoryGameProps {
   onPenaltyReset: () => void;
 }
 
-export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: MemoryGameProps) {
+export default function MemoryGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: MemoryGameProps) {
   const [memoryLevel, setMemoryLevel] = useState(1);
   const [cards, setCards] = useState<string[]>([]);
   const [gridConfig, setGridConfig] = useState<GridConfig>({ pairs: 2, cols: 2, totalCards: 4 });
@@ -60,6 +61,7 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
   const wasPlayingRef = useRef(false);
+  const timedOutRef = useRef(false);
 
   // Sync refs after render
   useEffect(() => {
@@ -84,6 +86,7 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
       matchedCountRef.current = 0;
 
       const duration = getTimerDuration(memLevel);
+      timedOutRef.current = false;
       setTimeLeft(duration);
     },
     []
@@ -117,7 +120,7 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
         if (next <= 0) {
           if (timerRef.current) clearInterval(timerRef.current);
           if (isPlayingRef.current && !isCompleteRef.current) {
-            onFail();
+            timedOutRef.current = true;
           }
           return 0;
         }
@@ -132,6 +135,12 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [isPlaying, isComplete, onFail, memoryLevel, timerResetKey]);
+
+  useEffect(() => {
+    if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
+    timedOutRef.current = false;
+    onFail();
+  }, [timeLeft, isPlaying, isComplete, onFail]);
 
   // Penalty reset
   useEffect(() => {
@@ -245,7 +254,7 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
 
   if (isThisComplete) {
     return (
-      <div className="rounded-lg bg-black/60 p-5 border border-[color:var(--neon-green)] flex items-center justify-center min-h-[300px]">
+      <div className={`rounded-lg bg-black/60 border border-[color:var(--neon-green)] flex items-center justify-center ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
         <div className="text-center text-[color:var(--neon-green)] font-bold">
           <div className="text-2xl mb-2">✅</div>
           <div>Hoàn thành!</div>
@@ -255,71 +264,73 @@ export default function MemoryGame({ globalLevel, gameScore, isPlaying, isComple
     );
   }
 
-  const CARD_SIZE = gridConfig.cols === 2 ? 80 : 76;
+  const CARD_SIZE = compact ? (gridConfig.cols === 2 ? 76 : 64) : gridConfig.cols === 2 ? 64 : 56;
 
   return (
-    <div className="rounded-lg bg-black/60 p-5 border border-white/5 min-h-[300px] flex flex-col items-center justify-center w-full">
+    <div className={`rounded-lg bg-black/60 border border-white/5 flex flex-col items-center justify-between w-full ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
       {/* Timer */}
-      <div className="flex items-center justify-between w-full mb-4">
+      <div className={`flex items-center justify-between w-full ${compact ? "mb-1" : "mb-2"}`}>
         <span className="font-mono text-xs text-[color:var(--text-muted)]">⏱</span>
         <span className={`font-mono text-sm font-bold ${timerClass}`}>{Math.ceil(timeLeft)}s</span>
       </div>
 
       {/* Card Grid */}
-      <div
-        className="grid gap-3 mx-auto"
-        style={{
-          gridTemplateColumns: `repeat(${gridConfig.cols}, ${CARD_SIZE}px)`,
-          gridTemplateRows: `repeat(${Math.ceil(gridConfig.totalCards / gridConfig.cols)}, ${CARD_SIZE}px)`,
-        }}
-      >
-        {cards.map((emoji, idx) => {
-          const isFlipped = flippedIndices.has(idx) || matchedIndices.has(idx);
-          const isMatched = matchedIndices.has(idx);
-          const label = idx < NUMPAD_POSITIONS.length ? NUMPAD_POSITIONS[idx] : idx + 1;
-          const isCentered = gridConfig.totalCards === 10 && idx === 9;
+      <div className="flex flex-1 items-center justify-center">
+        <div
+          className={`grid mx-auto ${compact ? "gap-1.5" : "gap-2"}`}
+          style={{
+            gridTemplateColumns: `repeat(${gridConfig.cols}, ${CARD_SIZE}px)`,
+            gridTemplateRows: `repeat(${Math.ceil(gridConfig.totalCards / gridConfig.cols)}, ${CARD_SIZE}px)`,
+          }}
+        >
+          {cards.map((emoji, idx) => {
+            const isFlipped = flippedIndices.has(idx) || matchedIndices.has(idx);
+            const isMatched = matchedIndices.has(idx);
+            const label = idx < NUMPAD_POSITIONS.length ? NUMPAD_POSITIONS[idx] : idx + 1;
+            const isCentered = gridConfig.totalCards === 10 && idx === 9;
 
-          return (
-            <div
-              key={idx}
-              className={`card-3d-container ${isCentered ? "col-start-2" : ""}`}
-              style={{ width: CARD_SIZE, height: CARD_SIZE }}
-              onClick={() => tryFlip(idx)}
-            >
+            return (
               <div
-                className={`card-3d cursor-pointer ${isFlipped ? "flipped" : ""} ${
-                  isMatched ? "opacity-0 scale-90 transition-all duration-500 pointer-events-none" : ""
-                }`}
+                key={idx}
+                className={`card-3d-container ${isCentered ? "col-start-2" : ""}`}
                 style={{ width: CARD_SIZE, height: CARD_SIZE }}
+                onClick={() => tryFlip(idx)}
               >
-                {/* Front (face down) */}
                 <div
-                  className={`card-front border rounded-lg ${
-                    errorFlash ? "border-red-500/40" : "border-[color:var(--neon-cyan)]/40"
-                  } bg-gradient-to-br from-[#1b084e] to-[#09001f] flex flex-col items-center justify-center shadow-[inset_0_0_12px_rgba(39,255,255,0.1)] transition hover:border-[color:var(--neon-cyan)]`}
+                  className={`card-3d cursor-pointer ${isFlipped ? "flipped" : ""} ${
+                    isMatched ? "opacity-0 scale-90 transition-all duration-500 pointer-events-none" : ""
+                  }`}
                   style={{ width: CARD_SIZE, height: CARD_SIZE }}
                 >
-                  <span className={`font-mono text-xs ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]/70"}`}>
-                    {label}
-                  </span>
-                  <span className={`font-mono text-xs mt-0.5 ${errorFlash ? "text-red-500" : "text-[color:var(--neon-cyan)]/50"}`}>
-                    ?
-                  </span>
-                </div>
-                {/* Back (flipped) */}
-                <div
-                  className="card-back border border-[color:var(--neon-pink)] rounded-lg bg-gradient-to-br from-[#370fff] to-[#8200ff] flex items-center justify-center shadow-[0_0_18px_rgba(255,0,255,0.4)]"
-                  style={{ width: CARD_SIZE, height: CARD_SIZE }}
-                >
-                  <span className="text-2xl">{emoji}</span>
+                  {/* Front (face down) */}
+                  <div
+                    className={`card-front border rounded-lg ${
+                      errorFlash ? "border-red-500/40" : "border-[color:var(--neon-cyan)]/40"
+                    } bg-gradient-to-br from-[#1b084e] to-[#09001f] flex flex-col items-center justify-center shadow-[inset_0_0_12px_rgba(39,255,255,0.1)] transition hover:border-[color:var(--neon-cyan)]`}
+                    style={{ width: CARD_SIZE, height: CARD_SIZE }}
+                  >
+                    <span className={`font-mono ${compact ? "text-base" : "text-xs"} ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]/70"}`}>
+                      {label}
+                    </span>
+                    <span className={`font-mono ${compact ? "text-base" : "text-xs"} mt-0.5 ${errorFlash ? "text-red-500" : "text-[color:var(--neon-cyan)]/50"}`}>
+                      ?
+                    </span>
+                  </div>
+                  {/* Back (flipped) */}
+                  <div
+                    className="card-back border border-[color:var(--neon-pink)] rounded-lg bg-gradient-to-br from-[#370fff] to-[#8200ff] flex items-center justify-center shadow-[0_0_18px_rgba(255,0,255,0.4)]"
+                    style={{ width: CARD_SIZE, height: CARD_SIZE }}
+                  >
+                    <span className={compact ? "text-3xl" : "text-xl"}>{emoji}</span>
+                  </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
 
-      <p className="text-xs text-[color:var(--text-muted)] mt-4 text-center">
+      <p className="text-[10px] text-[color:var(--text-muted)] text-center">
         Phím <kbd className="bg-[color:var(--surface)] px-1 rounded text-[10px]">1-{gridConfig.totalCards}</kbd> / Numpad để lật
       </p>
     </div>

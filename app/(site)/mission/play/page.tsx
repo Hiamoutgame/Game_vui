@@ -135,12 +135,23 @@ function GamePlayContent() {
   const isNc = activeTaskIds.includes("nc");
   const isPx = activeTaskIds.includes("px");
   const maxLevel = isMultiTrial ? 4 : VICTORY_LEVEL;
+  const gameCount = activeTaskIds.length;
+  const isDenseGrid = gameCount >= 3;
+  const gameGridClass =
+    gameCount === 2
+      ? "grid gap-4 md:grid-cols-2 max-w-6xl mx-auto"
+      : "grid gap-2 md:grid-cols-2 max-w-4xl mx-auto";
+  const gameCardSizeClass = gameCount === 2 ? "p-4 min-h-[360px]" : "p-2 min-h-[310px]";
+  const getCenteredThirdCardClass = (gameId: GameId) =>
+    gameCount === 3 && activeTaskIds[2] === gameId
+      ? "md:col-span-2 md:mx-auto md:w-full md:max-w-[calc(50%_-_0.5rem)]"
+      : "";
 
   return (
-    <main id="main-content" className="px-5 py-10 md:px-10 lg:px-24">
-      <div className="mx-auto max-w-7xl space-y-6">
+    <main id="main-content" className={`px-4 md:px-6 lg:px-8 ${isDenseGrid ? "py-1" : "py-5"}`}>
+      <div className={`mx-auto max-w-[1440px] ${isDenseGrid ? "space-y-1.5" : "space-y-3"}`}>
         {/* Breadcrumbs */}
-        <div className="flex items-center gap-2 font-mono text-xs font-bold text-[color:var(--text-muted)]">
+        <div className={`${isDenseGrid ? "hidden" : "flex"} items-center gap-2 font-mono text-xs font-bold text-[color:var(--text-muted)]`}>
           <Link href="/mission" className="hover:text-[color:var(--neon-cyan)]">Nhiệm vụ hệ thống</Link>
           <span>/</span>
           <span>Đa nhiệm ảo</span>
@@ -149,53 +160,38 @@ function GamePlayContent() {
         </div>
 
         {/* HUD */}
-        <div className={`flex flex-wrap items-center justify-between gap-6 rounded-lg border bg-[color:var(--surface)] p-6 transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]" : "border-[color:var(--neon-cyan)] shadow-[0_0_24px_rgba(39,255,255,0.18)]"}`}>
-          <div className="flex items-center gap-6 md:gap-10 flex-wrap">
+        <div className={`flex flex-wrap items-center justify-between rounded-lg border bg-[color:var(--surface)] transition-all duration-200 ${isDenseGrid ? "gap-2 px-3 py-1.5" : "gap-3 px-4 py-3"} ${errorFlash ? "border-red-500 shadow-[0_0_30px_rgba(239,68,68,0.4)]" : "border-[color:var(--neon-cyan)] shadow-[0_0_24px_rgba(39,255,255,0.18)]"}`}>
+          <div className={`flex items-center flex-wrap ${isDenseGrid ? "gap-3 md:gap-5" : "gap-4 md:gap-6"}`}>
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Hiệu suất</p>
-              <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-white">{engine.totalScore} XP</h2>
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-white">{engine.totalScore} XP</h2>
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Cấp độ</p>
-              <span className="inline-block bg-[color:var(--neon-purple)] text-white px-4 py-1 rounded-full font-bold text-sm">
+              <span className="inline-block bg-[color:var(--neon-purple)] text-white px-3 py-0.5 rounded-full font-bold text-xs">
                 Cấp {engine.currentLevel}/{maxLevel}
               </span>
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Đang xử lý</p>
-              <h2 className={`font-[family-name:var(--font-heading)] text-2xl font-bold ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>
+              <h2 className={`font-[family-name:var(--font-heading)] text-xl font-bold ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>
                 {activeTaskIds.length}/4 TÁC VỤ
               </h2>
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Gián đoạn</p>
-              <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[color:var(--neon-pink)]">{engine.totalFails}</h2>
+              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-[color:var(--neon-pink)]">{engine.totalFails}</h2>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <button onClick={handleEndGame} className="inline-flex min-h-11 items-center justify-center rounded border border-[color:var(--neon-pink)]/60 bg-transparent px-4 py-2 text-xs font-bold text-[color:var(--neon-pink)] hover:bg-[rgba(255,0,255,0.1)] transition">
+          <div className="flex items-center gap-2">
+            <button onClick={handleEndGame} className="inline-flex min-h-9 items-center justify-center rounded border border-[color:var(--neon-pink)]/60 bg-transparent px-3 py-1.5 text-xs font-bold text-[color:var(--neon-pink)] hover:bg-[rgba(255,0,255,0.1)] transition">
               Kết thúc
             </button>
-            <Link href="/mission" className="inline-flex min-h-11 items-center justify-center rounded border border-white/20 bg-transparent px-4 py-2 text-xs font-bold text-white hover:bg-white/10 transition">
+            <Link href="/mission" className="inline-flex min-h-9 items-center justify-center rounded border border-white/20 bg-transparent px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition">
               Thoát
             </Link>
           </div>
         </div>
-
-        {/* Keyboard hints */}
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-[color:var(--neon-purple)]/60 bg-[color:var(--surface)] px-4 py-3 text-sm">
-          <div className="flex items-center gap-2 text-white text-sm">
-            <span className="text-[color:var(--neon-green)]">●</span>
-            <span>{engine.isPlaying ? "Đang vận hành" : "Đã dừng"}: {activeTaskIds.length} tác vụ.</span>
-          </div>
-          <div className="flex flex-wrap gap-4 font-mono text-[11px] text-[color:var(--text-muted)]">
-            {isKm && <span>[Phím 1-9,0 / Numpad]: Lật bài</span>}
-            {isHt && <span>[A/D hoặc Giữ chuột kéo]: Hứng tác vụ</span>}
-            {isNc && <span>[Y]: Đúng / [N]: Sai</span>}
-            {isPx && <span>[Mũi Tên]: Phản xạ ngược</span>}
-          </div>
-        </div>
-
         {/* Victory / Complete state */}
         {(engine.victory || allComplete || !engine.isPlaying && !showSummary) && (engine.victory || allComplete) ? (
           <div className="rounded-lg border border-[color:var(--neon-green)] bg-[rgba(57,255,20,0.06)] p-8 text-center max-w-2xl mx-auto space-y-6">
@@ -214,20 +210,21 @@ function GamePlayContent() {
           </div>
         ) : (
           /* Game Grid */
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className={gameGridClass}>
             {/* Panel 1: Memory */}
             {isKm && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] p-5 flex flex-col justify-between min-h-[440px] transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-3">
+              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("km")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex flex-col">
                     <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.km}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-base">{GAME_NAMES.km}</h3>
+                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.km}</h3>
                   </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-3 py-1 font-mono text-xs`}>
+                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
                     {engine.isPlaying ? "ONLINE" : "OFFLINE"}
                   </div>
                 </div>
                 <MemoryGame
+                  compact={isDenseGrid}
                   globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.km || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
@@ -243,17 +240,18 @@ function GamePlayContent() {
 
             {/* Panel 2: Ball */}
             {isHt && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] p-5 flex flex-col justify-between min-h-[440px] transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-pink)]/40 shadow-[0_0_24px_rgba(255,0,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-3">
+              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("ht")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-pink)]/40 shadow-[0_0_24px_rgba(255,0,255,0.15)]"}`}>
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex flex-col">
                     <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-pink)]"}`}>Tác vụ {GAME_NUMBERS.ht}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-base">{GAME_NAMES.ht}</h3>
+                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.ht}</h3>
                   </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)] shadow-[0_0_10px_rgba(255,0,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-3 py-1 font-mono text-xs`}>
+                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)] shadow-[0_0_10px_rgba(255,0,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
                     {engine.isPlaying ? "ONLINE" : "OFFLINE"}
                   </div>
                 </div>
                 <BallGame
+                  compact={isDenseGrid}
                   globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.ht || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
@@ -269,17 +267,18 @@ function GamePlayContent() {
 
             {/* Panel 3: Word/Stroop */}
             {isNc && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] p-5 flex flex-col justify-between min-h-[440px] transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-3">
+              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("nc")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex flex-col">
                     <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.nc}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-base">{GAME_NAMES.nc}</h3>
+                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.nc}</h3>
                   </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-3 py-1 font-mono text-xs`}>
+                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
                     {engine.isPlaying ? "ONLINE" : "OFFLINE"}
                   </div>
                 </div>
                 <WordGame
+                  compact={isDenseGrid}
                   globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.nc || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
@@ -295,17 +294,18 @@ function GamePlayContent() {
 
             {/* Panel 4: Arrow */}
             {isPx && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] p-5 flex flex-col justify-between min-h-[440px] transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-green)]/40 shadow-[0_0_24px_rgba(57,255,20,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-3">
+              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("px")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-green)]/40 shadow-[0_0_24px_rgba(57,255,20,0.15)]"}`}>
+                <div className="flex items-center justify-between mb-2 gap-2">
                   <div className="flex flex-col">
                     <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-green)]"}`}>Tác vụ {GAME_NUMBERS.px}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-base">{GAME_NAMES.px}</h3>
+                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.px}</h3>
                   </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-green)] text-[color:var(--neon-green)] shadow-[0_0_10px_rgba(57,255,20,0.3)]") : "border-white/20 text-white/40"} bg-black px-3 py-1 font-mono text-xs`}>
+                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-green)] text-[color:var(--neon-green)] shadow-[0_0_10px_rgba(57,255,20,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
                     {engine.isPlaying ? "ONLINE" : "OFFLINE"}
                   </div>
                 </div>
                 <ArrowGame
+                  compact={isDenseGrid}
                   globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.px || 0}
                   isPlaying={engine.isPlaying && !engine.victory}

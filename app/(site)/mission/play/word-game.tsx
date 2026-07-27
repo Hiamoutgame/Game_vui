@@ -46,6 +46,7 @@ function getTimerDuration(level: number): number {
 }
 
 interface WordGameProps {
+  compact?: boolean;
   globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
@@ -57,7 +58,7 @@ interface WordGameProps {
   onPenaltyReset: () => void;
 }
 
-export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: WordGameProps) {
+export default function WordGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: WordGameProps) {
   const [round, setRound] = useState<StroopRound>(INITIAL_ROUND);
   const [timeLeft, setTimeLeft] = useState(30);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -65,6 +66,7 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
   const isCompleteRef = useRef(isComplete);
   const wasPlayingRef = useRef(false);
   const currentRoundLevelRef = useRef<number | null>(null);
+  const timedOutRef = useRef(false);
 
   // Sync refs after render
   useEffect(() => {
@@ -75,6 +77,7 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
     const duration = getTimerDuration(globalLevel);
+    timedOutRef.current = false;
     setTimeLeft(duration);
 
     timerRef.current = setInterval(() => {
@@ -83,7 +86,7 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
         if (next <= 0) {
           if (timerRef.current) clearInterval(timerRef.current);
           if (isPlayingRef.current && !isCompleteRef.current) {
-            onFail();
+            timedOutRef.current = true;
           }
           return 0;
         }
@@ -93,7 +96,13 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
         return next;
       });
     }, 1000);
-  }, [globalLevel, onFail]);
+  }, [globalLevel]);
+
+  useEffect(() => {
+    if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
+    timedOutRef.current = false;
+    onFail();
+  }, [timeLeft, isPlaying, isComplete, onFail]);
 
   const isGameMaxed = gameScore >= MAX_PER_GAME_SCORE;
 
@@ -175,7 +184,7 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
 
   if (isThisComplete) {
     return (
-      <div className="rounded-lg bg-black/60 p-5 border border-[color:var(--neon-green)] flex items-center justify-center min-h-[300px]">
+      <div className={`rounded-lg bg-black/60 border border-[color:var(--neon-green)] flex items-center justify-center ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
         <div className="text-center text-[color:var(--neon-green)] font-bold">
           <div className="text-2xl mb-2">✅</div>
           <div>Hoàn thành!</div>
@@ -186,22 +195,19 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
   }
 
   return (
-    <div className="rounded-lg bg-black/60 p-5 border border-white/5 min-h-[300px] flex flex-col justify-between">
+    <div className={`rounded-lg bg-black/60 border border-white/5 flex flex-col justify-between ${compact ? "min-h-[252.5px] p-2" : "min-h-[230px] p-3"}`}>
       {/* Timer */}
-      <div className="flex items-center justify-between w-full mb-3">
+      <div className={`flex items-center justify-between w-full ${compact ? "mb-1" : "mb-2"}`}>
         <span className="font-mono text-xs text-[color:var(--text-muted)]">⏱</span>
         <span className={`font-mono text-sm font-bold ${timerClass}`}>{Math.ceil(timeLeft)}s</span>
       </div>
 
       {/* Word display */}
       <div
-        className={`flex flex-col items-center justify-center h-[140px] border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/45 rounded-lg p-2 transition-colors`}
+        className={`flex flex-col items-center justify-center ${compact ? "h-[125px]" : "h-[88px]"} border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/45 rounded-lg p-2 transition-colors`}
       >
-        <p className="font-mono text-xs text-[color:var(--text-muted)] mb-3">
-          MÀU CHỮ VÀ NGHĨA CÓ TRÙNG NHAU?
-        </p>
         <div
-          className="text-4xl font-extrabold tracking-widest text-center filter drop-shadow-[0_0_12px_rgba(255,255,255,0.1)]"
+          className={`${compact ? "text-6xl" : "text-4xl"} font-extrabold tracking-widest text-center filter drop-shadow-[0_0_12px_rgba(255,255,255,0.1)]`}
           style={{ color: round.colorHex }}
         >
           {round.word}
@@ -209,16 +215,16 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
       </div>
 
       {/* Buttons */}
-      <div className="grid grid-cols-2 gap-4 mt-3">
+      <div className="grid grid-cols-2 gap-2 mt-2">
         <button
           onClick={() => handleAnswer(true)}
-          className="bg-[color:var(--neon-green)]/90 hover:bg-[color:var(--neon-green)] text-black min-h-[46px] rounded-lg text-sm font-extrabold transition shadow-lg"
+          className={`bg-[color:var(--neon-green)]/90 hover:bg-[color:var(--neon-green)] text-black ${compact ? "min-h-11 text-sm" : "min-h-9 text-xs"} rounded-lg font-extrabold transition shadow-lg`}
         >
           [Y] ĐÚNG
         </button>
         <button
           onClick={() => handleAnswer(false)}
-          className="bg-red-600 hover:bg-red-700 text-white min-h-[46px] rounded-lg text-sm font-extrabold transition shadow-lg"
+          className={`bg-red-600 hover:bg-red-700 text-white ${compact ? "min-h-11 text-sm" : "min-h-9 text-xs"} rounded-lg font-extrabold transition shadow-lg`}
         >
           [N] SAI
         </button>

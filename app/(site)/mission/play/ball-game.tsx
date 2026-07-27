@@ -5,6 +5,7 @@ import { soundSystem } from "./sound-system";
 import { MAX_PER_GAME_SCORE } from "./types";
 
 interface BallGameProps {
+  compact?: boolean;
   globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
@@ -35,7 +36,7 @@ function getRandomBallX(areaWidth: number) {
   return Math.random() * Math.max(0, areaWidth - BALL_SIZE);
 }
 
-export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: BallGameProps) {
+export default function BallGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: BallGameProps) {
   const [ballPos, setBallPos] = useState({ x: 50, y: 0 });
   const [bucketPos, setBucketPos] = useState(50);
   const bucketPosRef = useRef(50);
@@ -211,7 +212,7 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
 
   if (isThisComplete) {
     return (
-      <div className="rounded-lg bg-black/60 p-5 border border-[color:var(--neon-green)] flex items-center justify-center min-h-[300px]">
+      <div className={`rounded-lg bg-black/60 border border-[color:var(--neon-green)] flex items-center justify-center ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
         <div className="text-center text-[color:var(--neon-green)] font-bold">
           <div className="text-2xl mb-2">✅</div>
           <div>Hoàn thành!</div>
@@ -222,12 +223,12 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
   }
 
   return (
-    <div className="rounded-lg bg-black/60 p-5 border border-white/5 min-h-[300px] flex flex-col justify-between">
+    <div className={`rounded-lg bg-black/60 border border-white/5 flex flex-col justify-between ${compact ? "min-h-[245px] p-2" : "min-h-[230px] p-3"}`}>
       <div
         ref={areaRef}
         onMouseDown={handleMouseDown}
         onTouchStart={handleMouseDown}
-        className={`relative border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/85 rounded-lg h-[210px] overflow-hidden select-none cursor-grab active:cursor-grabbing transition-colors`}
+        className={`relative border ${errorFlash ? "border-red-500/30" : "border-white/5"} bg-black/85 rounded-lg ${compact ? "h-[190px]" : "h-[160px]"} overflow-hidden select-none cursor-grab active:cursor-grabbing transition-colors`}
       >
         {/* Ball */}
         <div
@@ -244,7 +245,7 @@ export default function BallGame({ globalLevel, gameScore, isPlaying, isComplete
           style={{ left: `calc(${bucketPos}% - 40px)` }}
         />
       </div>
-      <p className="text-xs text-[color:var(--text-muted)] text-center mt-2">
+      <p className={`text-[10px] text-[color:var(--text-muted)] text-center ${compact ? "mt-1" : "mt-2"}`}>
         Dùng phím <strong className="text-white">A / D</strong> hoặc <strong className="text-white">Nhấn giữ chuột & kéo</strong>
       </p>
     </div>
