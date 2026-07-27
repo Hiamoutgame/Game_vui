@@ -139,8 +139,11 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
+    const nextMemoryLevel = memoryLevel >= MAX_PER_GAME_SCORE ? 1 : memoryLevel + 1;
+    setMemoryLevel(nextMemoryLevel);
+    setup(nextMemoryLevel);
     onFail();
-  }, [timeLeft, isPlaying, isComplete, onFail]);
+  }, [timeLeft, isPlaying, isComplete, memoryLevel, setup, onFail]);
 
   // Penalty reset
   useEffect(() => {
@@ -211,12 +214,11 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
             setFlippedIndices(newFlipped2);
             flippedPairRef.current = [];
             setLocked(false);
-            onFail();
           }, 800);
         }
       }
     },
-    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, onFail, setup, gameScore, memoryLevel]
+    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, setup, gameScore, memoryLevel]
   );
 
   // Keyboard handler

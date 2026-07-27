@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
 import { MAX_PER_GAME_SCORE } from "./types";
 
-const WORDS = ["RED", "BLUE", "GREEN", "YELLOW", "ORANGE", "PURPLE", "PINK", "BLACK", "WHITE", "BROWN"];
+const WORDS = ["ĐỎ", "XANH", "LỤC", "VÀNG", "CAM", "TÍM", "HỒNG", "ĐEN", "TRẮNG", "NÂU"];
 const COLORS = [
   "#e74c3c", "#3498db", "#2ecc71", "#f1c40f", "#e67e22",
   "#9b59b6", "#ff69b4", "#2c3e50", "#ecf0f1", "#8b4513",
@@ -17,7 +17,7 @@ interface StroopRound {
 }
 
 const INITIAL_ROUND: StroopRound = {
-  word: "RED",
+  word: "ĐỎ",
   colorHex: COLORS[0],
   correctAnswer: true,
 };

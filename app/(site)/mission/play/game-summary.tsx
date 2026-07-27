@@ -16,7 +16,8 @@ interface GameSummaryProps {
   gameScores: GameScores;
   gameFailures: GameFailures;
   activeGames: GameId[];
-  onRestart: () => void;
+  expectedPercent?: number | null;
+  onBackHome: () => void;
   onClose: () => void;
 }
 
@@ -44,7 +45,8 @@ export default function GameSummary({
   gameScores,
   gameFailures,
   activeGames,
-  onRestart,
+  expectedPercent = null,
+  onBackHome, 
   onClose,
 }: GameSummaryProps) {
   const [now, setNow] = useState<number>(0);
@@ -58,7 +60,9 @@ export default function GameSummary({
   const elapsed = gameStartTime ? Math.floor((now - gameStartTime) / 1000) : 0;
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
-  const progressPercent = Math.max(0, parseFloat(((totalScore / maxTotal) * 100).toFixed(1)));
+  const netScore = Math.max(0, totalScore - totalFails);
+  const progressPercent = maxTotal > 0 ? Math.max(0, parseFloat(((netScore / maxTotal) * 100).toFixed(1))) : 0;
+  const percentGap = expectedPercent === null ? null : parseFloat((progressPercent - expectedPercent).toFixed(1));
   const insight = getInsight(activeGames.length, totalFails, isVictory);
 
   if (!isOpen) return null;
@@ -115,6 +119,13 @@ export default function GameSummary({
           </span>
         </div>
 
+        <div className="flex justify-between px-3 py-3 bg-black/35 rounded-lg mb-3 font-bold text-white">
+          <span>Điểm ròng</span>
+          <span>
+            {netScore} / {maxTotal}
+          </span>
+        </div>
+
         {/* More stats */}
         <div className="text-left space-y-1 mb-4 text-sm">
           <p className="text-[color:var(--neon-pink)]">❌ Lỗi: {totalFails}</p>
@@ -125,6 +136,12 @@ export default function GameSummary({
             📊 Cấp đạt được: {currentLevel} / {maxLevel}
           </p>
         </div>
+
+          {expectedPercent !== null && (
+            <p className="text-[color:var(--neon-cyan)] font-bold">
+              🎯 Dự đoán ban đầu: {expectedPercent}%
+            </p>
+          )}
 
         {/* Progress bar */}
         <div className="mb-5">
@@ -141,6 +158,23 @@ export default function GameSummary({
           </p>
         </div>
 
+        {percentGap !== null && (
+          <div className="rounded-lg border border-[color:var(--neon-purple)]/35 bg-[rgba(130,0,255,0.08)] p-3 mb-5 text-left">
+            <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-purple)] mb-1">
+              So sánh với dự đoán
+            </p>
+            <p className="text-sm text-[color:var(--text-muted)]">
+              Bạn dự đoán <strong className="text-white">{expectedPercent}%</strong>, thực tế đạt{" "}
+              <strong className="text-white">{progressPercent}%</strong>.
+            </p>
+            <p className={`mt-1 text-sm font-bold ${percentGap >= 0 ? "text-[color:var(--neon-green)]" : "text-[color:var(--neon-pink)]"}`}>
+              {percentGap >= 0
+                ? `Vượt dự đoán ${percentGap}%`
+                : `Thấp hơn dự đoán ${Math.abs(percentGap)}%`}
+            </p>
+          </div>
+        )}
+
         {/* Insight */}
         <div className="rounded-lg border border-[color:var(--neon-cyan)]/30 bg-[color:var(--surface)] p-4 mb-5 text-left">
           <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-cyan)] mb-2">
@@ -152,10 +186,10 @@ export default function GameSummary({
         {/* Buttons */}
         <div className="flex flex-col gap-3">
           <button
-            onClick={onRestart}
+            onClick={onBackHome}
             className="min-h-12 rounded-lg border border-[color:var(--neon-cyan)] bg-[color:var(--neon-blue)] text-white font-bold shadow-[0_0_20px_rgba(39,255,255,0.3)] hover:bg-[color:var(--neon-purple)] transition-all"
           >
-            🔄 Chơi lại nhiệm vụ
+            🏠 Trở lại trang chủ
           </button>
           <Link
             href="/information"
@@ -163,12 +197,6 @@ export default function GameSummary({
           >
             📖 Đọc ghi chép về đa nhiệm
           </Link>
-          <button
-            onClick={onClose}
-            className="min-h-12 rounded-lg border border-white/10 bg-transparent text-white/60 font-bold hover:text-white hover:bg-white/5 transition"
-          >
-            Quay về Nhiệm vụ hệ thống
-          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, Suspense, useMemo, useEffect } from "react";
+import { useState, useCallback, useRef, Suspense, useMemo, useEffect, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useGameEngine } from "./game-engine";
@@ -42,6 +42,8 @@ function GamePlayContent() {
 
   // Summary
   const [showSummary, setShowSummary] = useState(false);
+  const [expectedPercent, setExpectedPercent] = useState<number | null>(null);
+  const [expectedPercentInput, setExpectedPercentInput] = useState("");
 
   // Track if game has been initialized
   const startedRef = useRef(false);
@@ -61,21 +63,22 @@ function GamePlayContent() {
   // Auto-start if no demo
   useEffect(() => {
     if (!startedRef.current && !initialDemo) {
+      if (!isMultiTrial) return;
       startedRef.current = true;
       setTimeout(() => {
-        if (isMultiTrial) actions.startGame(activeTaskIds, 4);
-        else actions.startGame(activeTaskIds);
+        actions.startGame(activeTaskIds, 4);
       }, 0);
     }
   }, [initialDemo, isMultiTrial, activeTaskIds, actions]);
 
   // Victory detection
   useEffect(() => {
+    if (isMultiTrial) return;
     if (engine.victory && !showSummary && !engine.isPlaying) {
       const t = setTimeout(() => setShowSummary(true), 200);
       return () => clearTimeout(t);
     }
-  }, [engine.victory, engine.isPlaying, showSummary]);
+  }, [engine.victory, engine.isPlaying, showSummary, isMultiTrial]);
 
   // All active games maxed out
   const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= 20);
@@ -84,6 +87,17 @@ function GamePlayContent() {
     setDemoMode(null);
     router.replace("/mission");
   }, [router]);
+
+  const handleExpectedPercentSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const parsedPercent = Number(expectedPercentInput);
+      if (!Number.isFinite(parsedPercent) || parsedPercent < 0 || parsedPercent > 100) return;
+      setExpectedPercent(Math.round(parsedPercent));
+      startGame();
+    },
+    [expectedPercentInput, startGame]
+  );
 
   const handleScore = useCallback(
     (gameId: GameId) => actions.addScore(gameId),
@@ -109,10 +123,9 @@ function GamePlayContent() {
     setShowSummary(true);
   }, [actions]);
 
-  const handleRestart = useCallback(() => {
-    setShowSummary(false);
-    startGame();
-  }, [startGame]);
+  const handleBackHome = useCallback(() => {
+     window.location.href = "/mission";
+  }, []);
 
   const handleBackToConfig = useCallback(() => {
     setShowSummary(false);
@@ -126,6 +139,60 @@ function GamePlayContent() {
     return (
       <main id="main-content" className="px-5 py-10 md:px-10 lg:px-24 min-h-[80vh] flex items-center justify-center">
         <GameDemo gameList={activeTaskIds} standalone={true} isOpen={true} onFinish={handleDemoFinish} />
+      </main>
+    );
+  }
+
+  const shouldAskExpectedPercent = !isMultiTrial && expectedPercent === null && !engine.isPlaying && !engine.victory;
+  const parsedExpectedPercent = Number(expectedPercentInput);
+  const isExpectedPercentValid =
+    expectedPercentInput.trim().length > 0 &&
+    Number.isFinite(parsedExpectedPercent) &&
+    parsedExpectedPercent >= 0 &&
+    parsedExpectedPercent <= 100;
+
+  if (shouldAskExpectedPercent) {
+    return (
+      <main id="main-content" className="px-5 py-10 md:px-10 lg:px-24 min-h-[80vh] flex items-center justify-center">
+        <section className="w-full max-w-xl rounded-2xl border border-[color:var(--neon-cyan)]/50 bg-[color:var(--surface)] p-6 text-center shadow-[0_0_30px_rgba(39,255,255,0.16)]">
+          <p className="font-mono text-xs font-bold uppercase tracking-[0.2em] text-[color:var(--neon-cyan)]">
+            Khởi tạo nhiệm vụ
+          </p>
+          <h1 className="mt-3 font-[family-name:var(--font-heading)] text-3xl font-bold text-white">
+            Bạn nghĩ mình hoàn thành được bao nhiêu phần trăm?
+          </h1>
+          <p className="mt-3 text-sm leading-6 text-[color:var(--text-muted)]">
+            Nhập dự đoán ban đầu của bạn. Sau khi hoàn thành, hệ thống sẽ lấy tổng điểm trừ số lần sai để tính % thực tế và so sánh với dự đoán này.
+          </p>
+
+          <form onSubmit={handleExpectedPercentSubmit} className="mt-6 space-y-4">
+            <label className="block text-left text-sm font-bold text-white" htmlFor="expected-percent">
+              Dự đoán hoàn thành (%)
+            </label>
+            <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-black/50 px-4 py-3 focus-within:border-[color:var(--neon-cyan)]">
+              <input
+                id="expected-percent"
+                type="number"
+                min={0}
+                max={100}
+                step={1}
+                value={expectedPercentInput}
+                onChange={(event) => setExpectedPercentInput(event.target.value)}
+                placeholder="Ví dụ: 70"
+                className="w-full bg-transparent text-3xl font-bold text-white outline-none placeholder:text-white/25"
+                autoFocus
+              />
+              <span className="font-[family-name:var(--font-heading)] text-2xl font-bold text-[color:var(--neon-cyan)]">%</span>
+            </div>
+            <button
+              type="submit"
+              disabled={!isExpectedPercentValid}
+              className="min-h-12 w-full rounded-lg bg-[color:var(--neon-cyan)] px-6 font-bold text-black transition hover:bg-[color:var(--neon-purple)] hover:text-white disabled:cursor-not-allowed disabled:opacity-45"
+            >
+              Bắt đầu nhiệm vụ
+            </button>
+          </form>
+        </section>
       </main>
     );
   }
@@ -195,16 +262,10 @@ function GamePlayContent() {
         {/* Victory / Complete state */}
         {(engine.victory || allComplete || !engine.isPlaying && !showSummary) && (engine.victory || allComplete) ? (
           <div className="rounded-lg border border-[color:var(--neon-green)] bg-[rgba(57,255,20,0.06)] p-8 text-center max-w-2xl mx-auto space-y-6">
-            <p className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-[color:var(--neon-green)]">SIMULATION COMPLETE</p>
-            <h2 className="font-[family-name:var(--font-heading)] text-4xl font-bold text-white">Báo cáo đa nhiệm ảo</h2>
-            <div className="text-left space-y-4 rounded bg-black/40 p-6 font-mono text-sm text-[color:var(--text-muted)]">
-              <p>● Số tác vụ: <strong className="text-white">{activeTaskIds.length}/4</strong></p>
-              <p>● Tổng XP: <strong className="text-white">{engine.totalScore} XP</strong></p>
-              <p>● Phí tổn chú ý: <strong className="text-[color:var(--neon-pink)]">~{Math.min(90, activeTaskIds.length * 18)}% năng lực nhận thức</strong></p>
-              <p>● Khuyên dùng: <strong className="text-[color:var(--neon-cyan)]">Khóa một tab 15 phút để hồi năng lượng.</strong></p>
-            </div>
+            <p className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-[color:var(--neon-green)]">CHÚC MỪNG</p>
+            <h2 className="font-[family-name:var(--font-heading)] text-4xl font-bold text-white">Hoàn thành đa nhiệm ảo</h2>
             <div className="flex justify-center gap-4">
-              <button onClick={handleRestart} className="inline-flex min-h-11 items-center justify-center rounded bg-[color:var(--neon-cyan)] text-black px-6 font-bold hover:bg-[color:var(--neon-purple)] hover:text-white transition">Chơi lại</button>
+              <button onClick={handleBackHome} className="inline-flex min-h-11 items-center justify-center rounded bg-[color:var(--neon-cyan)] text-black px-6 font-bold hover:bg-[color:var(--neon-purple)] hover:text-white transition">Trở lại</button>
               <Link href="/information" className="inline-flex min-h-11 items-center justify-center rounded border border-[color:var(--neon-cyan)]/50 px-6 font-bold text-[color:var(--text-muted)] hover:text-white transition">Đọc bài viết liên quan</Link>
             </div>
           </div>
@@ -324,7 +385,7 @@ function GamePlayContent() {
 
       {/* Summary Overlay */}
       <GameSummary
-        isOpen={showSummary}
+        isOpen={showSummary && !isMultiTrial}
         isVictory={engine.victory}
         totalScore={engine.totalScore}
         totalFails={engine.totalFails}
@@ -334,7 +395,8 @@ function GamePlayContent() {
         gameScores={engine.gameScores}
         gameFailures={engine.gameFailures}
         activeGames={activeTaskIds}
-        onRestart={handleRestart}
+        expectedPercent={expectedPercent}
+        onBackHome={handleBackHome}
         onClose={handleBackToConfig}
       />
     </main>
