@@ -63,6 +63,8 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
+  const wasPlayingRef = useRef(false);
+  const currentRoundLevelRef = useRef<number | null>(null);
 
   // Sync refs after render
   useEffect(() => {
@@ -93,24 +95,40 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
     }, 1000);
   }, [globalLevel, onFail]);
 
-  // Initialize / restart timer on level change
+  const isGameMaxed = gameScore >= MAX_PER_GAME_SCORE;
+
+  // Initialize round on start, and reshuffle only on mission level changes
+  // or when the player answers inside this game.
   useEffect(() => {
-    if (isPlaying && !isComplete && gameScore < MAX_PER_GAME_SCORE) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional init
-      startTimer();
-      setRound(generateRound());
+    if (!isPlaying || isComplete || isGameMaxed) {
+      wasPlayingRef.current = false;
+      currentRoundLevelRef.current = null;
+      if (timerRef.current) clearInterval(timerRef.current);
+      return;
     }
+
+    const justStarted = !wasPlayingRef.current;
+    const levelChanged = currentRoundLevelRef.current !== globalLevel;
+
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- game timer/round must initialize when play state starts or level timing changes
+    startTimer();
+    if (justStarted || levelChanged) {
+      setRound(generateRound());
+      currentRoundLevelRef.current = globalLevel;
+    }
+
+    wasPlayingRef.current = true;
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, gameScore, globalLevel, penaltyKey, startTimer]);
+  }, [isPlaying, isComplete, isGameMaxed, globalLevel, startTimer]);
 
   // Penalty reset
   useEffect(() => {
     if (penaltyKey > 0 && isPlaying) {
       if (timerRef.current) clearInterval(timerRef.current);
       setTimeout(() => {
-        setRound(generateRound());
         startTimer();
         onPenaltyReset();
       }, 600);
@@ -124,16 +142,15 @@ export default function WordGame({ globalLevel, gameScore, isPlaying, isComplete
       if (playerSaidYes === round.correctAnswer) {
         soundSystem.wordCorrect();
         onScore();
-        // Generate new round + reset timer
         setRound(generateRound());
-        const duration = getTimerDuration(globalLevel);
-        setTimeLeft(duration);
+        startTimer();
       } else {
+        setRound(generateRound());
         onFail();
         // Timer stopped via parent
       }
     },
-    [isPlaying, isComplete, gameScore, round, onScore, onFail, globalLevel]
+    [isPlaying, isComplete, gameScore, round, onScore, onFail, startTimer]
   );
 
   // Keyboard: Y/N
