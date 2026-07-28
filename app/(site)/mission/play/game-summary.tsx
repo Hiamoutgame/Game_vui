@@ -38,12 +38,12 @@ function getInsight(activeCount: number, fails: number, isVictory: boolean | nul
 export default function GameSummary({
   isOpen,
   isVictory,
-  totalScore,
   totalFails,
   currentLevel,
   maxLevel = VICTORY_LEVEL,
   gameStartTime,
   gameScores,
+  gameFailures,
   gameLevels,
   activeGames,
   expectedPercent = null,
@@ -61,8 +61,10 @@ export default function GameSummary({
   const elapsed = gameStartTime ? Math.floor((now - gameStartTime) / 1000) : 0;
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
-  const netScore = Math.max(0, totalScore - totalFails);
-  const progressPercent = totalScore > 0 ? Math.max(0, parseFloat(((netScore / totalScore) * 100).toFixed(1))) : 0;
+  const getGameFinalScore = (gameId: GameId) =>
+    Math.max(0, Math.min(gameScores[gameId] || 0, MAX_PER_GAME_SCORE) - (gameFailures[gameId] || 0));
+  const netScore = activeGames.reduce((sum, gameId) => sum + getGameFinalScore(gameId), 0);
+  const progressPercent = maxTotal > 0 ? Math.max(0, parseFloat(((netScore / maxTotal) * 100).toFixed(1))) : 0;
   const percentGap = expectedPercent === null ? null : parseFloat((progressPercent - expectedPercent).toFixed(1));
   const insight = getInsight(activeGames.length, totalFails, isVictory);
 
@@ -91,6 +93,7 @@ export default function GameSummary({
         <div className="space-y-2 mb-4">
           {activeGames.map((g) => {
             const score = gameScores[g] || 0;
+            const finalScore = getGameFinalScore(g);
             const complete = score >= MAX_PER_GAME_SCORE;
             return (
               <div
@@ -100,8 +103,8 @@ export default function GameSummary({
                 <span className="font-bold text-white">
                   {GAME_ICONS[g]} {GAME_NAMES[g]}
                 </span>
-                <span className={complete ? "text-[color:var(--neon-green)] font-bold" : "text-[color:var(--neon-pink)] font-bold"}>
-                  {score}/{MAX_PER_GAME_SCORE} {complete ? "✅" : ""}
+                <span className={finalScore > 0 ? "text-[color:var(--neon-green)] font-bold" : "text-[color:var(--neon-pink)] font-bold"}>
+                  {finalScore}/{MAX_PER_GAME_SCORE} {complete ? "✅" : ""}
                 </span>
               </div>
             );
@@ -111,13 +114,6 @@ export default function GameSummary({
         {/* Total row */}
         <div className="flex justify-between px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
           <span>Tổng điểm</span>
-          <span>
-            {totalScore} / {maxTotal}
-          </span>
-        </div>
-
-        <div className="flex justify-between px-3 py-3 bg-black/35 rounded-lg mb-3 font-bold text-white">
-          <span>Điểm ròng</span>
           <span>
             {netScore} / {maxTotal}
           </span>
@@ -158,7 +154,7 @@ export default function GameSummary({
             </div>
           </div>
           <p className="text-sm font-bold text-[color:var(--text-muted)] mt-1">
-            Tiến độ: {progressPercent}%
+            Hiệu suất thực tế: {progressPercent}%
           </p>
         </div>
 
