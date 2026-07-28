@@ -207,6 +207,7 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
               src="/media/thumbnails/series-thumbnail.png"
               alt="Series Một Cú Task thumbnail"
               fill
+              sizes="(max-width: 1024px) 100vw, 40vw"
               className="object-cover"
             />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(39,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(130,0,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
@@ -231,7 +232,7 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
             </h1>
 
             {/* Video Player */}
-            <div className="relative overflow-hidden  rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+            <div className="relative overflow-hidden flex justify-center rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
               {isFacebook ? (
                 <iframe
                   src={playerSrc}
@@ -329,13 +330,13 @@ export function EpisodePage({ episode }: { episode: string }) {
           </h2>
 
           {/* Video Player */}
-          <div className="relative z-10 overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+          <div className="relative z-10 flex justify-center w-full overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
             {isFacebook ? (
               <iframe
                 src={playerSrc}
                 width="267"
                 height="476"
-                style={{ border: "none", overflow: "hidden" }}
+                style={{ border: "none", overflow: "hidden", }}
                 scrolling="no"
                 frameBorder="0"
                 allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
@@ -396,6 +397,7 @@ export function EpisodePage({ episode }: { episode: string }) {
               src="/media/thumbnails/series-thumbnail.png"
               alt="Series Một Cú Task thumbnail"
               fill
+              sizes="(max-width: 768px) 100vw, 200px"
               className="object-cover"
             />
           </div>
@@ -500,6 +502,7 @@ export function ShortFilmPage() {
               src="/media/thumbnails/shortfilm-thumbnail.png"
               alt="Phim ngắn thumbnail"
               fill
+              sizes="(max-width: 768px) 100vw, 200px"
               className="object-cover"
             />
           </div>
