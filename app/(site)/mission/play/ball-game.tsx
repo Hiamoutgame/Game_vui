@@ -36,7 +36,8 @@ function getRandomBallX(areaWidth: number) {
   return Math.random() * Math.max(0, areaWidth - BALL_SIZE);
 }
 
-export default function BallGame({ compact = false, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: BallGameProps) {
+export default function BallGame({ compact = false, gameScore, isPlaying, isComplete: _isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: BallGameProps) {
+  void _isComplete;
   const ballLevel = Math.max(1, gameScore + 1);
   const [ballPos, setBallPos] = useState({ x: 50, y: 0 });
   const [bucketPos, setBucketPos] = useState(50);
@@ -50,6 +51,7 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
   const ballLevelRef = useRef(ballLevel);
   const onScoreRef = useRef(onScore);
   const onFailRef = useRef(onFail);
+  const gameScoreRef = useRef(gameScore);
   const [levelResetKey, setLevelResetKey] = useState(0);
 
   // Sync refs after render
@@ -57,6 +59,7 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
     isPlayingRef.current = isPlaying;
     onScoreRef.current = onScore;
     onFailRef.current = onFail;
+    gameScoreRef.current = gameScore;
   });
 
   useEffect(() => {
@@ -72,7 +75,7 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
   const fallProgressRef = useRef(0);
   const lastFrameTimeRef = useRef<number | null>(null);
 
-  const isThisComplete = isComplete || gameScore >= MAX_PER_GAME_SCORE;
+  const isThisComplete = false;
 
   // Game loop
   useEffect(() => {
@@ -128,12 +131,12 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
           return;
         } else {
           // Missed
-          onFailRef.current();
+          if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFailRef.current();
           resetBall(areaWidth);
         }
       } else if (ballRef.current.y >= areaHeight - BALL_SIZE) {
         // Past bottom
-        onFailRef.current();
+        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFailRef.current();
         resetBall(areaWidth);
       }
 

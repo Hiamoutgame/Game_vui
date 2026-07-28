@@ -62,25 +62,6 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
     []
   );
 
-  const checkVictory = useCallback(
-    (scores: GameScores, active: GameId[]) => {
-      const targetScore = demoCapRef.current || MAX_PER_GAME_SCORE;
-      return active.length > 0 && active.every((g) => (scores[g] || 0) >= targetScore);
-    },
-    []
-  );
-
-  const checkGameCompleteFn = useCallback(
-    (gameId: GameId, scores: GameScores, completed: Set<GameId>) => {
-      if ((scores[gameId] || 0) >= MAX_PER_GAME_SCORE) {
-        completed.add(gameId);
-        return true;
-      }
-      return false;
-    },
-    []
-  );
-
   const startGame = useCallback(
     (games: GameId[], demoCap?: number) => {
       demoCapRef.current = demoCap ?? null;
@@ -112,26 +93,15 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
         const newScores = { ...prev.gameScores, [gameId]: (prev.gameScores[gameId] || 0) + 1 };
         const newTotal = prev.totalScore + 1;
         const newLevel = updateLevel(newScores, prev.activeGames, prev.currentLevel);
-        const newCompleted = new Set(prev.completedGames);
-        checkGameCompleteFn(gameId, newScores, newCompleted);
-
-        const didVictory = checkVictory(newScores, prev.activeGames);
-        if (didVictory) {
-          soundSystem.levelUp();
-        }
-
         return {
           ...prev,
           totalScore: newTotal,
           gameScores: newScores,
           currentLevel: newLevel,
-          victory: didVictory || prev.victory,
-          isPlaying: didVictory ? false : prev.isPlaying,
-          completedGames: newCompleted,
         };
       });
     },
-    [updateLevel, checkVictory, checkGameCompleteFn]
+    [updateLevel]
   );
 
   const penalizeGame = useCallback(
@@ -139,6 +109,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       soundSystem.wrong();
       setState((prev) => {
         if (!prev.isPlaying || prev.victory) return prev;
+        if ((prev.gameScores[gameId] || 0) >= MAX_PER_GAME_SCORE) return prev;
 
         const newFails = { ...prev.gameFailures, [gameId]: (prev.gameFailures[gameId] || 0) + 1 };
 

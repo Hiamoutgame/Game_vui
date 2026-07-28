@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 
 type Notification = {
   id: number;
+  side: "left" | "right";
   label: string;
   content: string;
   color: string;
+  exiting: boolean;
 };
 
 const DISTRACTIONS = [
@@ -22,48 +24,82 @@ export function DistractionNotifications() {
 
   useEffect(() => {
     let idCounter = 0;
-    
-    const addNotification = () => {
-      const item = DISTRACTIONS[Math.floor(Math.random() * DISTRACTIONS.length)];
-      const newNotification = { id: idCounter++, ...item };
+    const timers = new Set<ReturnType<typeof setTimeout>>();
 
-      setNotifications((prev) => {
-        const updated = [...prev, newNotification];
-        return updated.slice(-3);
-      });
+    const setManagedTimeout = (callback: () => void, delay: number) => {
+      const timer = setTimeout(() => {
+        timers.delete(timer);
+        callback();
+      }, delay);
+      timers.add(timer);
+      return timer;
     };
 
-    const initialTimeout = setTimeout(addNotification, 0);
+    const addNotification = (side: Notification["side"]) => {
+      const item = DISTRACTIONS[Math.floor(Math.random() * DISTRACTIONS.length)];
+      const newNotification = { id: idCounter++, side, exiting: false, ...item };
+
+      setNotifications((prev) => {
+        const withoutCurrentSide = prev.filter((notification) => notification.side !== side);
+        return [...withoutCurrentSide, newNotification];
+      });
+
+      setManagedTimeout(() => {
+        setNotifications((prev) =>
+          prev.map((notification) =>
+            notification.id === newNotification.id ? { ...notification, exiting: true } : notification,
+          ),
+        );
+      }, 3600);
+
+      setManagedTimeout(() => {
+        setNotifications((prev) => prev.filter((notification) => notification.id !== newNotification.id));
+      }, 4300);
+    };
+
+    const addBurst = () => {
+      const bothSides = Math.random() > 0.62;
+      if (bothSides) {
+        addNotification("left");
+        addNotification("right");
+        return;
+      }
+
+      addNotification(Math.random() > 0.5 ? "left" : "right");
+    };
+
+    const initialTimeout = setManagedTimeout(addBurst, 500);
 
     const interval = setInterval(() => {
       if (Math.random() > 0.4) {
-        addNotification();
+        addBurst();
       }
     }, 5500);
 
     return () => {
       clearTimeout(initialTimeout);
       clearInterval(interval);
+      timers.forEach((timer) => clearTimeout(timer));
+      timers.clear();
     };
   }, []);
 
   if (notifications.length === 0) return null;
 
   return (
-    <div className="pointer-events-none fixed bottom-4 right-4 z-[999] flex w-full max-w-[356px] flex-col justify-end gap-2.5">
-      {notifications.map((n, i) => {
-        // Calculate opacity based on position (0 is oldest, length-1 is newest)
-        const isOldest = i === 0 && notifications.length === 3;
-        const isMiddle = (i === 1 && notifications.length === 3) || (i === 0 && notifications.length === 2);
-        
-        let opacityClass = "opacity-100 translate-x-0";
-        if (isOldest) opacityClass = "opacity-40 translate-x-4";
-        else if (isMiddle) opacityClass = "opacity-75 translate-x-2";
+    <div className="pointer-events-none fixed inset-y-0 left-0 right-0 z-[999] hidden xl:block">
+      {notifications.map((n) => {
+        const sideClass = n.side === "left" ? "left-6 2xl:left-12" : "right-6 2xl:right-12";
+        const motionClass = n.exiting
+          ? n.side === "left"
+            ? "opacity-0 -translate-x-5 scale-95"
+            : "opacity-0 translate-x-5 scale-95"
+          : "opacity-100 translate-x-0 scale-100";
 
         return (
           <div
             key={n.id}
-            className={`flex flex-col gap-1.5 overflow-hidden rounded-lg border p-[10px_12px] transition-all duration-700 ease-in-out ${opacityClass}`}
+            className={`absolute top-1/2 flex w-[280px] -translate-y-1/2 flex-col gap-1.5 overflow-hidden rounded-lg border p-[10px_12px] transition-all duration-700 ease-in-out ${sideClass} ${motionClass}`}
             style={{
               borderColor: n.color,
               boxShadow: `0 8px 20px ${n.color}55`,

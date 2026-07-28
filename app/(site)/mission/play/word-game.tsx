@@ -103,15 +103,15 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    onFail();
-  }, [timeLeft, isPlaying, isComplete, onFail]);
-
-  const isGameMaxed = gameScore >= MAX_PER_GAME_SCORE;
+    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+    setRound(generateRound());
+    startTimer();
+  }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
 
   // Initialize round on start; timer uses wordLevel derived from gameScore.
   // Round (word/color) stays the same — only regenerated on correct answer.
   useEffect(() => {
-    if (!isPlaying || isComplete || isGameMaxed) {
+    if (!isPlaying || isComplete) {
       wasPlayingRef.current = false;
       if (timerRef.current) clearInterval(timerRef.current);
       return;
@@ -130,7 +130,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, isGameMaxed, startTimer]);
+  }, [isPlaying, isComplete, startTimer]);
 
   // Penalty reset
   useEffect(() => {
@@ -150,16 +150,16 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
 
   const handleAnswer = useCallback(
     (playerSaidYes: boolean) => {
-      if (!isPlaying || isComplete || gameScoreRef.current >= MAX_PER_GAME_SCORE) return;
+      if (!isPlaying || isComplete) return;
 
       if (playerSaidYes === round.correctAnswer) {
         soundSystem.wordCorrect();
-        onScore();
+        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onScore();
         setRound(generateRound());
         startTimer();
       } else {
         setRound(generateRound());
-        onFail();
+        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
         // Timer stopped via parent
       }
     },
@@ -182,7 +182,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
     return () => document.removeEventListener("keydown", handler);
   }, [isPlaying, isComplete, handleAnswer]);
 
-  const isThisComplete = isComplete || gameScore >= MAX_PER_GAME_SCORE;
+  const isThisComplete = false;
   const timerClass =
     timeLeft <= 3 ? "text-[color:var(--neon-pink)] animate-pulse" : timeLeft <= 7 ? "text-[color:var(--neon-pink)]" : "text-[color:var(--neon-cyan)]";
 

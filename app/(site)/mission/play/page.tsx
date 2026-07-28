@@ -83,7 +83,6 @@ function GamePlayContent() {
 
   // All active games reached their own target score.
   const targetScore = isMultiTrial ? 4 : MAX_PER_GAME_SCORE;
-  const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= targetScore);
   const getDisplayScore = (gameId: GameId) => Math.min(engine.gameScores[gameId] || 0, targetScore);
 
   const handleDemoFinish = useCallback(() => {
@@ -269,19 +268,8 @@ function GamePlayContent() {
             </Link>
           </div>
         </div>
-        {/* Victory / Complete state */}
-        {(engine.victory || allComplete || !engine.isPlaying && !showSummary) && (engine.victory || allComplete) ? (
-          <div className="rounded-lg border border-[color:var(--neon-green)] bg-[rgba(57,255,20,0.06)] p-8 text-center max-w-2xl mx-auto space-y-6">
-            <p className="font-mono text-sm font-bold uppercase tracking-[0.2em] text-[color:var(--neon-green)]">CHÚC MỪNG</p>
-            <h2 className="font-[family-name:var(--font-heading)] text-4xl font-bold text-white">Hoàn thành đa nhiệm ảo</h2>
-            <div className="flex justify-center gap-4">
-              <button onClick={handleBackHome} className="inline-flex min-h-11 items-center justify-center rounded bg-[color:var(--neon-cyan)] text-black px-6 font-bold hover:bg-[color:var(--neon-purple)] hover:text-white transition">Trở lại</button>
-              <Link href="/information" className="inline-flex min-h-11 items-center justify-center rounded border border-[color:var(--neon-cyan)]/50 px-6 font-bold text-[color:var(--text-muted)] hover:text-white transition">Đọc bài viết liên quan</Link>
-            </div>
-          </div>
-        ) : (
-          /* Game Grid */
-          <div className={gameGridClass}>
+        {/* Game Grid */}
+        <div className={gameGridClass}>
             {/* Panel 1: Memory */}
             {isKm && (
               <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("km")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
@@ -390,8 +378,7 @@ function GamePlayContent() {
                 />
               </div>
             )}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Summary Overlay */}

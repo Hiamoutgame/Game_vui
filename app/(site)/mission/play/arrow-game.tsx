@@ -35,11 +35,13 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
   const timedOutRef = useRef(false);
+  const gameScoreRef = useRef(gameScore);
 
   // Sync refs after render
   useEffect(() => {
     isPlayingRef.current = isPlaying;
     isCompleteRef.current = isComplete;
+    gameScoreRef.current = gameScore;
   });
 
   const startTimer = useCallback(() => {
@@ -69,8 +71,10 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    onFail();
-  }, [timeLeft, isPlaying, isComplete, onFail]);
+    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+    setCurrentDir(DIRECTIONS[Math.floor(Math.random() * 4)]);
+    startTimer();
+  }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
 
   const pickRandom = () => {
     setCurrentDir(DIRECTIONS[Math.floor(Math.random() * 4)]);
@@ -78,7 +82,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
 
   // Initialize / restart timer
   useEffect(() => {
-    if (isPlaying && !isComplete && gameScore < MAX_PER_GAME_SCORE) {
+    if (isPlaying && !isComplete) {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional init
       startTimer();
       pickRandom();
@@ -107,20 +111,20 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
 
   const handleSelect = useCallback(
     (dir: Direction) => {
-      if (!isPlaying || isComplete || gameScore >= MAX_PER_GAME_SCORE) return;
+      if (!isPlaying || isComplete) return;
 
       const correct = OPPOSITES[currentDir];
       if (dir === correct) {
         soundSystem.arrowCorrect();
-        onScore();
+        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onScore();
         pickRandom();
         const duration = getTimerDuration(arrowLevel);
         setTimeLeft(duration);
       } else {
-        onFail();
+        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
       }
     },
-    [isPlaying, isComplete, gameScore, currentDir, onScore, onFail, arrowLevel]
+    [isPlaying, isComplete, currentDir, onScore, onFail, arrowLevel]
   );
 
   // Keyboard handler
@@ -153,7 +157,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
     return () => document.removeEventListener("keydown", handler);
   }, [isPlaying, isComplete, handleSelect]);
 
-  const isThisComplete = isComplete || gameScore >= MAX_PER_GAME_SCORE;
+  const isThisComplete = false;
   const timerClass =
     timeLeft <= 3 ? "text-[color:var(--neon-pink)] animate-pulse" : timeLeft <= 7 ? "text-[color:var(--neon-pink)]" : "text-[color:var(--neon-cyan)]";
 

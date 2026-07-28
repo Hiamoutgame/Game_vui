@@ -1,8 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import Link from "next/link";
-import { GAME_NAMES, GAME_ICONS, MAX_PER_GAME_SCORE, VICTORY_LEVEL } from "./types";
+import { GAME_NAMES, GAME_ICONS, MAX_PER_GAME_SCORE } from "./types";
 import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
 
 interface GameSummaryProps {
@@ -39,28 +38,14 @@ export default function GameSummary({
   isOpen,
   isVictory,
   totalFails,
-  currentLevel,
-  maxLevel = VICTORY_LEVEL,
-  gameStartTime,
   gameScores,
   gameFailures,
-  gameLevels,
   activeGames,
   expectedPercent = null,
   onBackHome,
   onClose,
 }: GameSummaryProps) {
-  const [now, setNow] = useState<number>(0);
-
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- intentional snapshot of current time on open
-    if (isOpen) setNow(Date.now());
-  }, [isOpen]);
-
   const maxTotal = activeGames.length * MAX_PER_GAME_SCORE;
-  const elapsed = gameStartTime ? Math.floor((now - gameStartTime) / 1000) : 0;
-  const mins = Math.floor(elapsed / 60);
-  const secs = elapsed % 60;
   const getGameFinalScore = (gameId: GameId) =>
     Math.max(0, Math.min(gameScores[gameId] || 0, MAX_PER_GAME_SCORE) - (gameFailures[gameId] || 0));
   const netScore = activeGames.reduce((sum, gameId) => sum + getGameFinalScore(gameId), 0);
@@ -112,11 +97,10 @@ export default function GameSummary({
         </div>
 
         {/* Total row */}
-        <div className="flex justify-between px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
+        <div className="flex justify-between gap-3 px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
           <span>Tổng điểm</span>
-          <span>
-            {netScore} / {maxTotal}
-          </span>
+          <span>{netScore} / {maxTotal}</span>
+          <span className="text-[color:var(--neon-pink)]">Lỗi: {totalFails}</span>
         </div>
 
         {/* More stats */}

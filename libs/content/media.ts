@@ -45,15 +45,25 @@ export const mediaEntries: MediaEntry[] = [
   },
 ];
 
-export const photos: (AssetRef & { id: string })[] = Array.from(
-  { length: 6 },
-  (_, index) => ({
-    id: `photo-${index + 1}`,
-    label: `photoshoot-${index + 1}.jpg`,
-    alt: `Photoshoot Ảo ảnh đa nhiệm - ảnh ${index + 1}`,
-    ratio: index < 4 ? "portrait" : "wide",
-  }),
-);
+const photoshootFiles = [
+  "P.zo-1.png",
+  "P.zo-2.png",
+  "P.zo-3.png",
+  "P.zo-4.png",
+  "P.zo-5.png",
+  "P.zo-5-2.png",
+  "P.zo-7.png",
+  "P.zo-8.png",
+  "P.zo-9.png",
+];
+
+export const photos: (AssetRef & { id: string })[] = photoshootFiles.map((fileName, index) => ({
+  id: `photo-${index + 1}`,
+  src: `/media/photoshoot/${fileName}`,
+  label: fileName,
+  alt: `Photoshoot Ảo ảnh đa nhiệm - ảnh ${index + 1}`,
+  ratio: "portrait",
+}));
 
 export const seriesEpisodes: SeriesEpisode[] = [1, 2, 3].map((episode) => ({
   episode: String(episode),

@@ -147,9 +147,6 @@ export function MediaArchivePage() {
 }
 
 export function PhotoshootPage() {
-  const topRowPhotos = photos.slice(0, 4);
-  const bottomRowPhotos = photos.slice(4);
-
   return (
     <main id="main-content" className="px-5 py-16 md:px-10 lg:px-24">
       <div className="mx-auto max-w-7xl relative">
@@ -166,16 +163,8 @@ export function PhotoshootPage() {
           Ảo ảnh đa nhiệm
         </p>
 
-        {/* Top Row: 4 column grid */}
-        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-          {topRowPhotos.map((photo) => (
-            <EmptyAssetFrame key={photo.id} asset={photo} />
-          ))}
-        </div>
-
-        {/* Bottom Row: Wide photos */}
-        <div className="mt-8 grid gap-6 md:grid-cols-2">
-          {bottomRowPhotos.map((photo) => (
+        <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {photos.map((photo) => (
             <EmptyAssetFrame key={photo.id} asset={photo} className="w-full" />
           ))}
         </div>

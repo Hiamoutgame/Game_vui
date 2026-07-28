@@ -14,7 +14,7 @@ interface GridConfig {
 
 function getGridConfig(memLevel: number): GridConfig {
   if (memLevel < 10) return { pairs: 2, cols: 2, totalCards: 4 };
-  if (memLevel <= 15) return { pairs: 3, cols: 3, totalCards: 6 };
+  if (memLevel < 17) return { pairs: 3, cols: 3, totalCards: 6 };
   return { pairs: 4, cols: 3, totalCards: 8 };
 }
 
@@ -143,7 +143,7 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
     const nextLevel = memoryProgressLevel + 1;
     setMemoryProgressLevel(nextLevel);
     setup(nextLevel);
-    onFail();
+    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
   }, [timeLeft, isPlaying, isComplete, memoryProgressLevel, setup, onFail]);
 
   // Penalty reset
@@ -160,13 +160,6 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
       }, 600);
     }
   }, [penaltyKey]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Handle completion when score reaches max
-  useEffect(() => {
-    if (gameScore >= MAX_PER_GAME_SCORE && isPlaying) {
-      if (timerRef.current) clearInterval(timerRef.current);
-    }
-  }, [gameScore, isPlaying]);
 
   // Report per-game level to engine
   useEffect(() => {
@@ -201,16 +194,11 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
             setLocked(false);
             matchedCountRef.current++;
 
-            onScore();
-
             if (matchedCountRef.current >= gridConfig.pairs) {
-              if (gameScoreRef.current + matchedCountRef.current >= MAX_PER_GAME_SCORE) {
-                // Memory complete – will be handled by parent
-              } else {
-                const nextLevel = memoryProgressLevel + 1;
-                setMemoryProgressLevel(nextLevel);
-                setup(nextLevel);
-              }
+              if (gameScoreRef.current < MAX_PER_GAME_SCORE) onScore();
+              const nextLevel = memoryProgressLevel + 1;
+              setMemoryProgressLevel(nextLevel);
+              setup(nextLevel);
             }
           }, 300);
         } else {
@@ -260,7 +248,7 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
   const timerClass =
     timeLeft <= 3 ? "text-[color:var(--neon-pink)] animate-pulse" : timeLeft <= 10 ? "text-[color:var(--neon-pink)]" : "text-[color:var(--neon-cyan)]";
 
-  const isThisComplete = isComplete || gameScore >= MAX_PER_GAME_SCORE;
+  const isThisComplete = false;
 
   if (isThisComplete) {
     return (
