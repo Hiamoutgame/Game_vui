@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
-import { VICTORY_LEVEL, MAX_PER_GAME_SCORE } from "./types";
+import { VICTORY_LEVEL, MAX_PER_GAME_SCORE, GAME_MAX_SCORES } from "./types";
 import { soundSystem } from "./sound-system";
 
 export interface GameEngineState {
@@ -88,7 +88,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
     (gameId: GameId) => {
       setState((prev) => {
         if (!prev.isPlaying || prev.victory) return prev;
-        if ((prev.gameScores[gameId] || 0) >= MAX_PER_GAME_SCORE) return prev;
+        if ((prev.gameScores[gameId] || 0) >= (GAME_MAX_SCORES[gameId] || MAX_PER_GAME_SCORE)) return prev;
 
         const newScores = { ...prev.gameScores, [gameId]: (prev.gameScores[gameId] || 0) + 1 };
         const newTotal = prev.totalScore + 1;
@@ -109,7 +109,6 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       soundSystem.wrong();
       setState((prev) => {
         if (!prev.isPlaying || prev.victory) return prev;
-        if ((prev.gameScores[gameId] || 0) >= MAX_PER_GAME_SCORE) return prev;
 
         const newFails = { ...prev.gameFailures, [gameId]: (prev.gameFailures[gameId] || 0) + 1 };
 

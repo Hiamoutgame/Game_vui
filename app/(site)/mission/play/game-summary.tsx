@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { GAME_NAMES, GAME_ICONS, MAX_PER_GAME_SCORE } from "./types";
+import { GAME_NAMES, GAME_ICONS, GAME_MAX_SCORES } from "./types";
 import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
 
 interface GameSummaryProps {
@@ -45,9 +45,9 @@ export default function GameSummary({
   onBackHome,
   onClose,
 }: GameSummaryProps) {
-  const maxTotal = activeGames.length * MAX_PER_GAME_SCORE;
+  const maxTotal = activeGames.reduce((sum, gameId) => sum + (GAME_MAX_SCORES[gameId] || 20), 0);
   const getGameFinalScore = (gameId: GameId) =>
-    Math.max(0, Math.min(gameScores[gameId] || 0, MAX_PER_GAME_SCORE) - (gameFailures[gameId] || 0));
+    Math.max(0, Math.min(gameScores[gameId] || 0, GAME_MAX_SCORES[gameId] || 20) - (gameFailures[gameId] || 0));
   const netScore = activeGames.reduce((sum, gameId) => sum + getGameFinalScore(gameId), 0);
   const progressPercent = maxTotal > 0 ? Math.max(0, parseFloat(((netScore / maxTotal) * 100).toFixed(1))) : 0;
   const percentGap = expectedPercent === null ? null : parseFloat((progressPercent - expectedPercent).toFixed(1));
@@ -79,7 +79,7 @@ export default function GameSummary({
           {activeGames.map((g) => {
             const score = gameScores[g] || 0;
             const finalScore = getGameFinalScore(g);
-            const complete = score >= MAX_PER_GAME_SCORE;
+            const complete = score >= (GAME_MAX_SCORES[g] || 20);
             return (
               <div
                 key={g}
@@ -89,7 +89,7 @@ export default function GameSummary({
                   {GAME_ICONS[g]} {GAME_NAMES[g]}
                 </span>
                 <span className={finalScore > 0 ? "text-[color:var(--neon-green)] font-bold" : "text-[color:var(--neon-pink)] font-bold"}>
-                  {finalScore}/{MAX_PER_GAME_SCORE} {complete ? "✅" : ""}
+                  {finalScore}/{GAME_MAX_SCORES[g] || 20} {complete ? "✅" : ""}
                 </span>
               </div>
             );
@@ -97,10 +97,12 @@ export default function GameSummary({
         </div>
 
         {/* Total row */}
-        <div className="flex justify-between gap-3 px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
+        <div className="flex justify-between px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
           <span>Tổng điểm</span>
-          <span>{netScore} / {maxTotal}</span>
-          <span className="text-[color:var(--neon-pink)]">Lỗi: {totalFails}</span>
+          <span>
+            {netScore} / {maxTotal}
+          </span>
+
         </div>
 
         {/* More stats */}

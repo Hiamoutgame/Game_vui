@@ -10,7 +10,7 @@ import WordGame from "./word-game";
 import ArrowGame from "./arrow-game";
 import GameDemo from "./game-demo";
 import GameSummary from "./game-summary";
-import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL, MAX_PER_GAME_SCORE } from "./types";
+import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL, GAME_MAX_SCORES } from "./types";
 import type { GameId } from "./types";
 import { DistractionNotifications } from "@/components/ui/distraction-notifications";
 
@@ -82,8 +82,20 @@ function GamePlayContent() {
   }, [engine.victory, engine.isPlaying, showSummary, isMultiTrial]);
 
   // All active games reached their own target score.
-  const targetScore = isMultiTrial ? 4 : MAX_PER_GAME_SCORE;
-  const getDisplayScore = (gameId: GameId) => Math.min(engine.gameScores[gameId] || 0, targetScore);
+  const targetScore = isMultiTrial ? 4 : undefined;
+  const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= (targetScore ?? (GAME_MAX_SCORES[g] || 20)));
+  const getDisplayScore = (gameId: GameId) => Math.min(engine.gameScores[gameId] || 0, targetScore ?? (GAME_MAX_SCORES[gameId] || 20));
+
+  useEffect(() => {
+    if (isMultiTrial || !engine.isPlaying || showSummary || !allComplete) return;
+
+    const timer = setTimeout(() => {
+      actions.endGame();
+      setShowSummary(true);
+    }, 250);
+
+    return () => clearTimeout(timer);
+  }, [actions, allComplete, engine.isPlaying, isMultiTrial, showSummary]);
 
   const handleDemoFinish = useCallback(() => {
     setDemoMode(null);
@@ -128,12 +140,13 @@ function GamePlayContent() {
   }, []);
 
   const handleEndGame = useCallback(() => {
+    if (!allComplete) return;
     actions.endGame();
     setShowSummary(true);
-  }, [actions]);
+  }, [actions, allComplete]);
 
   const handleBackHome = useCallback(() => {
-     window.location.href = "/mission";
+    window.location.href = "/mission";
   }, []);
 
   const handleBackToConfig = useCallback(() => {
@@ -242,16 +255,16 @@ function GamePlayContent() {
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Hiệu suất</p>
               <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-white">{engine.totalScore} XP</h2>
             </div>
-            <div>
+            {/* <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Điểm từng tác vụ</p>
               <div className="flex flex-wrap gap-1.5 mt-0.5">
                 {activeTaskIds.map((g) => (
                   <span key={g} className="inline-block border border-white/10 bg-black/35 px-2 py-0.5 font-mono text-[10px] font-bold text-white">
-                    {GAME_NUMBERS[g]}: {getDisplayScore(g)}/{targetScore}
+                    {GAME_NUMBERS[g]}: {getDisplayScore(g)}/{GAME_MAX_SCORES[g] || 20}
                   </span>
                 ))}
               </div>
-            </div>
+            </div> */}
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Đang xử lý</p>
               <h2 className={`font-[family-name:var(--font-heading)] text-xl font-bold ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>
@@ -260,124 +273,134 @@ function GamePlayContent() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button onClick={handleEndGame} className="inline-flex min-h-9 items-center justify-center rounded border border-[color:var(--neon-pink)]/60 bg-transparent px-3 py-1.5 text-xs font-bold text-[color:var(--neon-pink)] hover:bg-[rgba(255,0,255,0.1)] transition">
+            <button
+              onClick={handleEndGame}
+              disabled={!allComplete}
+              className="inline-flex min-h-9 items-center justify-center rounded border border-[color:var(--neon-pink)]/60 bg-transparent px-3 py-1.5 text-xs font-bold text-[color:var(--neon-pink)] transition hover:bg-[rgba(255,0,255,0.1)] disabled:cursor-not-allowed disabled:border-white/15 disabled:text-white/35 disabled:hover:bg-transparent"
+              title={allComplete ? "Kết thúc nhiệm vụ" : "Cần đạt điểm tối đa ở tất cả tác vụ"}
+            >
               Kết thúc
             </button>
-            <Link href="/mission" className="inline-flex min-h-9 items-center justify-center rounded border border-white/20 bg-transparent px-3 py-1.5 text-xs font-bold text-white hover:bg-white/10 transition">
+            <button
+              onClick={handleBackHome}
+              disabled={!allComplete}
+              className="inline-flex min-h-9 items-center justify-center rounded border border-white/20 bg-transparent px-3 py-1.5 text-xs font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:border-white/10 disabled:text-white/35 disabled:hover:bg-transparent"
+              title={allComplete ? "Thoát nhiệm vụ" : "Cần đạt điểm tối đa ở tất cả tác vụ"}
+            >
               Thoát
-            </Link>
+            </button>
           </div>
         </div>
         {/* Game Grid */}
         <div className={gameGridClass}>
-            {/* Panel 1: Memory */}
-            {isKm && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("km")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.km}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.km}</h3>
-                  </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
-                    {engine.isPlaying ? "ONLINE" : "OFFLINE"}
-                  </div>
+          {/* Panel 1: Memory */}
+          {isKm && (
+            <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("km")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <div className="flex flex-col">
+                  <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.km}</span>
+                  <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.km}</h3>
                 </div>
-                <MemoryGame
-                  compact={isDenseGrid}
-                  globalLevel={engine.currentLevel}
-                  gameScore={engine.gameScores.km || 0}
-                  isPlaying={engine.isPlaying && !engine.victory}
-                  isComplete={actions.isGameComplete("km")}
-                  penaltyKey={penaltyKeys.km}
-                  errorFlash={errorFlash}
-                  onScore={() => handleScore("km")}
-                  onFail={() => handleFail("km")}
-                  onPenaltyReset={() => handlePenaltyReset()}
-                  onLevelChange={(lvl) => handleLevelChange("km", lvl)}
-                />
+                <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
+                  {engine.isPlaying ? "ONLINE" : "OFFLINE"}
+                </div>
               </div>
-            )}
+              <MemoryGame
+                compact={isDenseGrid}
+                globalLevel={engine.currentLevel}
+                gameScore={engine.gameScores.km || 0}
+                isPlaying={engine.isPlaying && !engine.victory}
+                isComplete={actions.isGameComplete("km")}
+                penaltyKey={penaltyKeys.km}
+                errorFlash={errorFlash}
+                onScore={() => handleScore("km")}
+                onFail={() => handleFail("km")}
+                onPenaltyReset={() => handlePenaltyReset()}
+                onLevelChange={(lvl) => handleLevelChange("km", lvl)}
+              />
+            </div>
+          )}
 
-            {/* Panel 2: Ball */}
-            {isHt && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("ht")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-pink)]/40 shadow-[0_0_24px_rgba(255,0,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-pink)]"}`}>Tác vụ {GAME_NUMBERS.ht}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.ht}</h3>
-                  </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)] shadow-[0_0_10px_rgba(255,0,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
-                    {engine.isPlaying ? "ONLINE" : "OFFLINE"}
-                  </div>
+          {/* Panel 2: Ball */}
+          {isHt && (
+            <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("ht")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-pink)]/40 shadow-[0_0_24px_rgba(255,0,255,0.15)]"}`}>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <div className="flex flex-col">
+                  <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-pink)]"}`}>Tác vụ {GAME_NUMBERS.ht}</span>
+                  <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.ht}</h3>
                 </div>
-                <BallGame
-                  compact={isDenseGrid}
-                  gameScore={engine.gameScores.ht || 0}
-                  isPlaying={engine.isPlaying && !engine.victory}
-                  isComplete={actions.isGameComplete("ht")}
-                  penaltyKey={penaltyKeys.ht}
-                  errorFlash={errorFlash}
-                  onScore={() => handleScore("ht")}
-                  onFail={() => handleFail("ht")}
-                  onPenaltyReset={() => handlePenaltyReset()}
-                  onLevelChange={(lvl) => handleLevelChange("ht", lvl)}
-                />
+                <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-pink)] text-[color:var(--neon-pink)] shadow-[0_0_10px_rgba(255,0,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
+                  {engine.isPlaying ? "ONLINE" : "OFFLINE"}
+                </div>
               </div>
-            )}
+              <BallGame
+                compact={isDenseGrid}
+                gameScore={engine.gameScores.ht || 0}
+                isPlaying={engine.isPlaying && !engine.victory}
+                isComplete={actions.isGameComplete("ht")}
+                penaltyKey={penaltyKeys.ht}
+                errorFlash={errorFlash}
+                onScore={() => handleScore("ht")}
+                onFail={() => handleFail("ht")}
+                onPenaltyReset={() => handlePenaltyReset()}
+                onLevelChange={(lvl) => handleLevelChange("ht", lvl)}
+              />
+            </div>
+          )}
 
-            {/* Panel 3: Word/Stroop */}
-            {isNc && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("nc")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.nc}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.nc}</h3>
-                  </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
-                    {engine.isPlaying ? "ONLINE" : "OFFLINE"}
-                  </div>
+          {/* Panel 3: Word/Stroop */}
+          {isNc && (
+            <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("nc")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-cyan)]/40 shadow-[0_0_24px_rgba(39,255,255,0.15)]"}`}>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <div className="flex flex-col">
+                  <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>Tác vụ {GAME_NUMBERS.nc}</span>
+                  <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.nc}</h3>
                 </div>
-                <WordGame
-                  compact={isDenseGrid}
-                  gameScore={engine.gameScores.nc || 0}
-                  isPlaying={engine.isPlaying && !engine.victory}
-                  isComplete={actions.isGameComplete("nc")}
-                  penaltyKey={penaltyKeys.nc}
-                  errorFlash={errorFlash}
-                  onScore={() => handleScore("nc")}
-                  onFail={() => handleFail("nc")}
-                  onPenaltyReset={() => handlePenaltyReset()}
-                  onLevelChange={(lvl) => handleLevelChange("nc", lvl)}
-                />
+                <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-cyan)] text-[color:var(--neon-cyan)] shadow-[0_0_10px_rgba(39,255,255,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
+                  {engine.isPlaying ? "ONLINE" : "OFFLINE"}
+                </div>
               </div>
-            )}
+              <WordGame
+                compact={isDenseGrid}
+                gameScore={engine.gameScores.nc || 0}
+                isPlaying={engine.isPlaying && !engine.victory}
+                isComplete={actions.isGameComplete("nc")}
+                penaltyKey={penaltyKeys.nc}
+                errorFlash={errorFlash}
+                onScore={() => handleScore("nc")}
+                onFail={() => handleFail("nc")}
+                onPenaltyReset={() => handlePenaltyReset()}
+                onLevelChange={(lvl) => handleLevelChange("nc", lvl)}
+              />
+            </div>
+          )}
 
-            {/* Panel 4: Arrow */}
-            {isPx && (
-              <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("px")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-green)]/40 shadow-[0_0_24px_rgba(57,255,20,0.15)]"}`}>
-                <div className="flex items-center justify-between mb-2 gap-2">
-                  <div className="flex flex-col">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-green)]"}`}>Tác vụ {GAME_NUMBERS.px}</span>
-                    <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.px}</h3>
-                  </div>
-                  <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-green)] text-[color:var(--neon-green)] shadow-[0_0_10px_rgba(57,255,20,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
-                    {engine.isPlaying ? "ONLINE" : "OFFLINE"}
-                  </div>
+          {/* Panel 4: Arrow */}
+          {isPx && (
+            <div className={`rounded-lg border-2 bg-[color:var(--surface)] ${gameCardSizeClass} ${getCenteredThirdCardClass("px")} flex flex-col justify-between transition-all duration-200 ${errorFlash ? "border-red-500 shadow-[0_0_24px_rgba(239,68,68,0.3)]" : "border-[color:var(--neon-green)]/40 shadow-[0_0_24px_rgba(57,255,20,0.15)]"}`}>
+              <div className="flex items-center justify-between mb-2 gap-2">
+                <div className="flex flex-col">
+                  <span className={`font-mono text-[10px] uppercase tracking-wider ${errorFlash ? "text-red-400" : "text-[color:var(--neon-green)]"}`}>Tác vụ {GAME_NUMBERS.px}</span>
+                  <h3 className="font-[family-name:var(--font-heading)] font-bold text-white text-sm">{GAME_NAMES.px}</h3>
                 </div>
-                <ArrowGame
-                  compact={isDenseGrid}
-                  gameScore={engine.gameScores.px || 0}
-                  isPlaying={engine.isPlaying && !engine.victory}
-                  isComplete={actions.isGameComplete("px")}
-                  penaltyKey={penaltyKeys.px}
-                  errorFlash={errorFlash}
-                  onScore={() => handleScore("px")}
-                  onFail={() => handleFail("px")}
-                  onPenaltyReset={() => handlePenaltyReset()}
-                  onLevelChange={(lvl) => handleLevelChange("px", lvl)}
-                />
+                <div className={`rounded border ${engine.isPlaying ? (errorFlash ? "border-red-500 text-red-400" : "border-[color:var(--neon-green)] text-[color:var(--neon-green)] shadow-[0_0_10px_rgba(57,255,20,0.3)]") : "border-white/20 text-white/40"} bg-black px-2 py-0.5 font-mono text-[10px]`}>
+                  {engine.isPlaying ? "ONLINE" : "OFFLINE"}
+                </div>
               </div>
-            )}
+              <ArrowGame
+                compact={isDenseGrid}
+                gameScore={engine.gameScores.px || 0}
+                isPlaying={engine.isPlaying && !engine.victory}
+                isComplete={actions.isGameComplete("px")}
+                penaltyKey={penaltyKeys.px}
+                errorFlash={errorFlash}
+                onScore={() => handleScore("px")}
+                onFail={() => handleFail("px")}
+                onPenaltyReset={() => handlePenaltyReset()}
+                onLevelChange={(lvl) => handleLevelChange("px", lvl)}
+              />
+            </div>
+          )}
         </div>
       </div>
 

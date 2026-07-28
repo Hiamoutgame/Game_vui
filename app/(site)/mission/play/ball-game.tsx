@@ -2,7 +2,6 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
-import { MAX_PER_GAME_SCORE } from "./types";
 
 interface BallGameProps {
   compact?: boolean;
@@ -51,7 +50,6 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
   const ballLevelRef = useRef(ballLevel);
   const onScoreRef = useRef(onScore);
   const onFailRef = useRef(onFail);
-  const gameScoreRef = useRef(gameScore);
   const [levelResetKey, setLevelResetKey] = useState(0);
 
   // Sync refs after render
@@ -59,7 +57,6 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
     isPlayingRef.current = isPlaying;
     onScoreRef.current = onScore;
     onFailRef.current = onFail;
-    gameScoreRef.current = gameScore;
   });
 
   useEffect(() => {
@@ -131,12 +128,12 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
           return;
         } else {
           // Missed
-          if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFailRef.current();
+          onFailRef.current();
           resetBall(areaWidth);
         }
       } else if (ballRef.current.y >= areaHeight - BALL_SIZE) {
         // Past bottom
-        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFailRef.current();
+        onFailRef.current();
         resetBall(areaWidth);
       }
 

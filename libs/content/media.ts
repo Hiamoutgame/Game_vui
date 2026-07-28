@@ -62,7 +62,7 @@ export const photos: (AssetRef & { id: string })[] = photoshootFiles.map((fileNa
   src: `/media/photoshoot/${fileName}`,
   label: fileName,
   alt: `Photoshoot Ảo ảnh đa nhiệm - ảnh ${index + 1}`,
-  ratio: "portrait",
+  ratio: fileName === "P.zo-1.png" || fileName === "P.zo-3.png" ? "wide" : "portrait",
 }));
 
 export const seriesEpisodes: SeriesEpisode[] = [1, 2, 3].map((episode) => ({

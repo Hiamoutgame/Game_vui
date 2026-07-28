@@ -2,31 +2,35 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { photos } from "@/libs/content/media";
 import { EmptyAssetFrame } from "@/components/ui/EmptyAssetFrame";
 import { NeonCard } from "@/components/ui/NeonCard";
 
-const episodeDetails: Record<string, { title: string; desc: string; duration: string; views: string; rating: string }> = {
+const episodeDetails: Record<string, { title: string; desc: string; duration: string; views: string; rating: string; youtubeId?: string; facebookEmbed?: string }> = {
   "1": {
     title: "Tập 1: Cổng Dịch Chuyển Vô Hại",
     desc: "Một cú click chuột mở ra 15 tab mới. Phi hành gia bắt đầu lạc trôi giữa những luồng thông báo chat và quên đi deadline ban đầu.",
-    duration: "02:15",
+    duration: "02:43",
     views: "1,402 lượt xem",
     rating: "Đánh giá 9.2/10",
+    facebookEmbed: "https://www.facebook.com/plugins/video.php?height=476&href=https%3A%2F%2Fwww.facebook.com%2Freel%2F1547885960364991%2F&show_text=false&width=267&t=0",
   },
   "2": {
     title: "Tập 2: Tín Hiệu Khẩn Cấp",
     desc: "Mọi task đều có độ ưu tiên cao nhất, tiếng chuông báo liên tục khiến nhịp tim và nhịp làm việc rơi vào hoảng loạn mất kiểm soát.",
-    duration: "01:58",
+    duration: "03:10",
     views: "1,120 lượt xem",
     rating: "Đánh giá 9.0/10",
+    youtubeId: "G6U95oOOHng",
   },
   "3": {
     title: "Tập 3: Ảo Ảnh Năng Suất",
     desc: "Khi bạn giải quyết hết tất cả các task phụ tinh tinh nhưng nhiệm vụ chính cốt lõi vẫn đứng yên trong màn sương thông báo.",
-    duration: "03:02",
+    duration: "03:58",
     views: "986 lượt xem",
     rating: "Đánh giá 9.4/10",
+    youtubeId: "mjMlpmcEvlg",
   },
 };
 
@@ -165,7 +169,7 @@ export function PhotoshootPage() {
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {photos.map((photo) => (
-            <EmptyAssetFrame key={photo.id} asset={photo} className="w-full" />
+            <EmptyAssetFrame key={photo.id} asset={photo} className={photo.ratio === "wide" ? "w-full sm:col-span-2" : "w-full"} />
           ))}
         </div>
       </div>
@@ -176,7 +180,15 @@ export function PhotoshootPage() {
 export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }) {
   const [activeEp, setActiveEp] = useState<string>(initialEpisode);
   const currentDetails = episodeDetails[activeEp] || episodeDetails["1"];
-  const [isPlaying, setIsPlaying] = useState(false);
+  const isFacebook = currentDetails.facebookEmbed != null;
+  const playerSrc = isFacebook
+    ? currentDetails.facebookEmbed
+    : `https://www.youtube.com/embed/${currentDetails.youtubeId}`;
+  const externalLink = isFacebook
+    ? currentDetails.facebookEmbed
+    : `https://www.youtube.com/watch?v=${currentDetails.youtubeId}`;
+  const platformLabel = isFacebook ? "▶ Facebook" : "▶ YouTube";
+  const externalLinkLabel = isFacebook ? "Mở trên Facebook" : "Mở trên YouTube";
 
   return (
     <main id="main-content" className="px-5 py-16 md:px-10 lg:px-24">
@@ -190,15 +202,21 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
 
         <div className="mt-10 grid gap-12 lg:grid-cols-[0.8fr_1.2fr] items-start">
           {/* Left Column: Cyberpunk Poster Frame */}
-          <div className="relative overflow-hidden rounded-lg border-2 border-[color:var(--neon-cyan)] bg-[color:var(--surface)] p-8 shadow-[0_0_28px_rgba(39,255,255,0.3)] min-h-[460px] flex flex-col justify-between aspect-[3/4]">
+          <div className="relative overflow-hidden rounded-lg border-2 border-[color:var(--neon-cyan)] bg-[color:var(--surface)] shadow-[0_0_28px_rgba(39,255,255,0.3)] min-h-[460px] flex flex-col justify-between aspect-[3/4]">
+            <Image
+              src="/media/thumbnails/series-thumbnail.png"
+              alt="Series Một Cú Task thumbnail"
+              fill
+              className="object-cover"
+            />
             <div className="absolute inset-0 bg-[linear-gradient(rgba(39,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(130,0,255,0.05)_1px,transparent_1px)] bg-[size:24px_24px]" />
             <div className="absolute inset-0 bg-gradient-to-t from-[color:var(--background)] to-transparent opacity-90" />
-            <div className="relative z-10">
+            <div className="relative z-10 p-8">
               <h2 className="neon-text font-[family-name:var(--font-heading)] text-5xl font-bold uppercase leading-none text-white">
                 MỘT CÚ<br />TASK
               </h2>
             </div>
-            <div className="relative z-10 self-center rounded-full bg-[color:var(--neon-cyan)] px-5 py-2 font-bold text-[color:var(--background)] text-sm shadow-[0_0_12px_rgba(39,255,255,0.6)]">
+            <div className="relative z-10 self-center rounded-full bg-[color:var(--neon-cyan)] px-5 py-2 font-bold text-[color:var(--background)] text-sm shadow-[0_0_12px_rgba(39,255,255,0.6)] mb-8">
               Check var siêu năng lực multitask
             </div>
           </div>
@@ -212,27 +230,39 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
               SERIES MỘT CÚ TASK
             </h1>
 
-            {/* Mock Player Box */}
-            <div className="relative overflow-hidden rounded-lg border border-white/10 bg-black min-h-[300px] flex flex-col items-center justify-center p-6">
-              {isPlaying ? (
-                <div className="text-center space-y-4 z-10">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-[color:var(--neon-cyan)] border-t-transparent" />
-                  <p className="font-mono text-sm text-[color:var(--neon-cyan)]">ĐANG PHÁT MOCK VIDEO {currentDetails.title.toUpperCase()}...</p>
-                  <button onClick={() => setIsPlaying(false)} className="text-xs text-[color:var(--neon-pink)] underline">Dừng phát</button>
-                </div>
+            {/* Video Player */}
+            <div className="relative overflow-hidden  rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+              {isFacebook ? (
+                <iframe
+                  src={playerSrc}
+                  width="267"
+                  height="476"
+                  style={{ border: "none", overflow: "hidden" }}
+                  scrolling="no"
+                  frameBorder="0"
+                  allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                  allowFullScreen
+                  title={`Một Cú Task - ${currentDetails.title}`}
+                />
               ) : (
-                <div className="text-center space-y-4 z-10">
-                  <button
-                    onClick={() => setIsPlaying(true)}
-                    className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--neon-cyan)] text-black font-bold text-xl shadow-[0_0_24px_rgba(39,255,255,0.6)] transition hover:scale-110"
-                    aria-label="Phát video"
-                  >
-                    ▶
-                  </button>
-                  <p className="text-sm text-[color:var(--text-muted)]">Nhấp để phát thử tập này</p>
-                </div>
+                <iframe
+                  className="aspect-video w-full"
+                  src={playerSrc}
+                  title={`Một Cú Task - ${currentDetails.title}`}
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  referrerPolicy="strict-origin-when-cross-origin"
+                  allowFullScreen
+                />
               )}
-              <div className="absolute bottom-4 left-4 font-mono text-xs text-[color:var(--text-muted)]"> Thời lượng: {currentDetails.duration}</div>
+            </div>
+
+            {/* Controls Bar */}
+            <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 text-sm font-mono text-white">
+              <span>{platformLabel}</span>
+              <span>Thời lượng: {currentDetails.duration}</span>
+              <a href={externalLink} target="_blank" rel="noreferrer" className="hover:text-[color:var(--neon-cyan)]">
+                {externalLinkLabel}
+              </a>
             </div>
 
             {/* Info Text */}
@@ -250,7 +280,6 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
                     key={num}
                     onClick={() => {
                       setActiveEp(num);
-                      setIsPlaying(false);
                     }}
                     className={`min-h-[44px] min-w-[80px] rounded border px-4 font-bold transition ${activeEp === num ? "border-[color:var(--neon-cyan)] bg-[rgba(39,255,255,0.14)] text-white shadow-[0_0_12px_rgba(39,255,255,0.2)]" : "border-white/10 text-[color:var(--text-muted)] hover:border-white/30"}`}
                   >
@@ -267,8 +296,16 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
 }
 
 export function EpisodePage({ episode }: { episode: string }) {
-  const [isPlaying, setIsPlaying] = useState(false);
   const currentEp = episodeDetails[episode] || episodeDetails["1"];
+  const isFacebook = currentEp.facebookEmbed != null;
+  const playerSrc = isFacebook
+    ? currentEp.facebookEmbed
+    : `https://www.youtube.com/embed/${currentEp.youtubeId}`;
+  const externalLink = isFacebook
+    ? currentEp.facebookEmbed
+    : `https://www.youtube.com/watch?v=${currentEp.youtubeId}`;
+  const platformLabel = isFacebook ? "▶ Facebook" : "▶ YouTube";
+  const externalLinkLabel = isFacebook ? "Mở trên Facebook" : "Mở trên YouTube";
 
   return (
     <main id="main-content" className="px-5 py-16 md:px-10 lg:px-24">
@@ -282,48 +319,48 @@ export function EpisodePage({ episode }: { episode: string }) {
           <span className="text-[color:var(--neon-cyan)]">Tập {episode}</span>
         </div>
 
-        {/* Flex Anime Player */}
-        <div className="relative overflow-hidden rounded-lg border border-[color:var(--neon-cyan)] bg-gradient-to-r from-black to-[color:var(--surface)] min-h-[500px] flex flex-col justify-between p-8">
+        {/* Video Player */}
+        <div className="relative overflow-hidden rounded-lg border border-[color:var(--neon-cyan)] bg-gradient-to-r from-black to-[color:var(--surface)] p-4 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(39,255,255,0.08),transparent_70%)] pointer-events-none" />
 
           {/* Title */}
-          <h2 className="text-xl font-bold uppercase tracking-wider text-[color:var(--neon-cyan)] z-10">
+          <h2 className="text-xl font-bold uppercase tracking-wider text-[color:var(--neon-cyan)] z-10 relative mb-4">
             TẬP {episode} — {currentEp.title.toUpperCase()}
           </h2>
 
-          {/* Player Core */}
-          <div className="my-10 flex flex-col items-center justify-center text-center z-10">
-            {isPlaying ? (
-              <div className="space-y-4">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-[color:var(--neon-cyan)] border-t-transparent" />
-                <p className="font-mono text-sm text-[color:var(--neon-cyan)]">ĐANG PHÁT MOCK VIDEO TẬP {episode}...</p>
-                <button onClick={() => setIsPlaying(false)} className="text-xs text-[color:var(--neon-pink)] underline">Dừng phát</button>
-              </div>
+          {/* Video Player */}
+          <div className="relative z-10 overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+            {isFacebook ? (
+              <iframe
+                src={playerSrc}
+                width="267"
+                height="476"
+                style={{ border: "none", overflow: "hidden" }}
+                scrolling="no"
+                frameBorder="0"
+                allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                allowFullScreen
+                title={`Một Cú Task - ${currentEp.title}`}
+              />
             ) : (
-              <div className="space-y-4">
-                <button
-                  onClick={() => setIsPlaying(true)}
-                  className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--neon-cyan)] text-black font-bold text-xl shadow-[0_0_28px_rgba(39,255,255,0.6)] transition hover:scale-110"
-                >
-                  ▶
-                </button>
-                <p className="text-sm text-[color:var(--text-muted)]">Nhấp để phát video</p>
-              </div>
+              <iframe
+                className="aspect-video w-full"
+                src={playerSrc}
+                title={`Một Cú Task - ${currentEp.title}`}
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                referrerPolicy="strict-origin-when-cross-origin"
+                allowFullScreen
+              />
             )}
           </div>
 
           {/* Controls Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 z-10 text-sm font-mono text-white">
-            <div className="flex items-center gap-4">
-              <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-[color:var(--neon-cyan)]">
-                {isPlaying ? "⏸ Tạm dừng" : "▶ Phát"}
-              </button>
-              <span>{isPlaying ? "00:03" : "00:00"} / {currentEp.duration}</span>
-            </div>
-            <div className="flex-1 max-w-md h-1.5 mx-4 rounded-full bg-white/20 overflow-hidden">
-              <div className="h-full bg-[color:var(--neon-cyan)] transition-all duration-300" style={{ width: isPlaying ? "3%" : "0%" }} />
-            </div>
-            <div>🔊 Âm lượng</div>
+          <div className="relative z-10 mt-4 flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 text-sm font-mono text-white">
+            <span>{platformLabel}</span>
+            <span>Thời lượng: {currentEp.duration}</span>
+            <a href={externalLink} target="_blank" rel="noreferrer" className="hover:text-[color:var(--neon-cyan)]">
+              {externalLinkLabel}
+            </a>
           </div>
         </div>
 
@@ -355,9 +392,12 @@ export function EpisodePage({ episode }: { episode: string }) {
         {/* Description Banner */}
         <div className="grid gap-6 rounded-lg border border-[color:var(--neon-cyan)]/30 bg-gradient-to-r from-[color:var(--surface)] to-[color:var(--background)] p-6 md:grid-cols-[200px_1fr] items-start">
           <div className="relative overflow-hidden rounded bg-gradient-to-b from-[color:var(--neon-cyan)]/30 to-[color:var(--background)] aspect-[3/4] flex items-center justify-center border border-[color:var(--neon-cyan)]/50">
-            <span className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white tracking-widest text-center">
-              MỘT CÚ<br />TASK
-            </span>
+            <Image
+              src="/media/thumbnails/series-thumbnail.png"
+              alt="Series Một Cú Task thumbnail"
+              fill
+              className="object-cover"
+            />
           </div>
           <div className="space-y-4">
             <h3 className="font-[family-name:var(--font-heading)] text-3xl font-bold text-[color:var(--neon-green)]">{currentEp.title}</h3>
@@ -379,13 +419,12 @@ export function EpisodePage({ episode }: { episode: string }) {
 }
 
 export function ShortFilmPage() {
-  const [activeTab, setActiveTab] = useState<"FULL" | "TEASER" | "HẬU TRƯỜNG">("FULL");
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [activeTab, setActiveTab] = useState<"FULL">("FULL");
+  const youtubeVideoId = "r9UApxIVBOI";
+  const youtubeUrl = `https://www.youtube.com/watch?v=${youtubeVideoId}`;
 
   const metaData = {
-    "FULL": { time: "07:42", views: "1,557 lượt xem", rating: "Đánh giá 9.4/10" },
-    "TEASER": { time: "01:15", views: "3,204 lượt xem", rating: "Đánh giá 9.0/10" },
-    "HẬU TRƯỜNG": { time: "03:45", views: "948 lượt xem", rating: "Đánh giá 8.8/10" },
+    "FULL": { time: "3:49", views: "1,557 lượt xem", rating: "Đánh giá 9.4/10" },
   };
 
   return (
@@ -410,60 +449,41 @@ export function ShortFilmPage() {
           </h2>
 
           {/* Player Core */}
-          <div className="my-10 flex flex-col items-center justify-center text-center z-10">
-            {isPlaying ? (
-              <div className="space-y-4">
-                <div className="inline-block h-10 w-10 animate-spin rounded-full border-4 border-[color:var(--neon-cyan)] border-t-transparent" />
-                <p className="font-mono text-sm text-[color:var(--neon-cyan)]">ĐANG PHÁT BẢN {activeTab} CHÍNH THỨC...</p>
-                <button onClick={() => setIsPlaying(false)} className="text-xs text-[color:var(--neon-pink)] underline">Dừng phát</button>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <button
-                  onClick={() => setIsPlaying(true)}
-                  className="inline-flex h-16 w-16 items-center justify-center rounded-full bg-[color:var(--neon-cyan)] text-black font-bold text-xl shadow-[0_0_28px_rgba(39,255,255,0.6)] transition hover:scale-110"
-                >
-                  ▶
-                </button>
-                <p className="text-sm text-[color:var(--text-muted)]">Nhấp để phát video</p>
-              </div>
-            )}
+          <div className="my-10 z-10 overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+            <iframe
+              className="aspect-video w-full"
+              src={`https://www.youtube.com/embed/${youtubeVideoId}`}
+              title="Phim ngắn Vũ Trụ Task Vụ"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
           </div>
 
           {/* Controls Bar */}
           <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 z-10 text-sm font-mono text-white">
             <div className="flex items-center gap-4">
-              <button onClick={() => setIsPlaying(!isPlaying)} className="hover:text-[color:var(--neon-cyan)]">
-                {isPlaying ? "⏸ Tạm dừng" : "▶ Phát"}
-              </button>
-              <span>{isPlaying ? "00:03" : "00:00"} / {metaData[activeTab].time}</span>
+              <span>▶ YouTube</span>
+              <span>Thời lượng: {metaData[activeTab].time}</span>
             </div>
             <div className="flex-1 max-w-md h-1.5 mx-4 rounded-full bg-white/20 overflow-hidden">
-              <div className="h-full bg-[color:var(--neon-cyan)] transition-all duration-300" style={{ width: isPlaying ? "3%" : "0%" }} />
+              <div className="h-full bg-[color:var(--neon-cyan)]" style={{ width: "100%" }} />
             </div>
-            <div>🔊 Âm lượng</div>
+            <a href={youtubeUrl} target="_blank" rel="noreferrer" className="hover:text-[color:var(--neon-cyan)]">
+              Mở trên YouTube
+            </a>
           </div>
-        </div>
-
-        {/* Toolbar Action Buttons */}
-        <div className="flex flex-wrap gap-3">
-          {["Tập tiếp", "Tắt đèn", "Theo dõi", "Phóng to", "Autonext: Bật", "Chụp ảnh", "Tải về"].map((tool) => (
-            <button key={tool} type="button" className="min-h-[44px] rounded border border-white/10 bg-[color:var(--surface)] px-4 text-xs font-bold text-[color:var(--text-muted)] transition hover:border-[color:var(--neon-cyan)] hover:text-white">
-              {tool}
-            </button>
-          ))}
         </div>
 
         {/* Episode/Clip Shelf */}
         <div className="rounded-lg border border-white/10 bg-[color:var(--surface)] p-6 space-y-4">
           <p className="font-mono text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)]">VŨ TRỤ TASK VỤ</p>
           <div className="flex flex-wrap gap-3">
-            {(["FULL", "TEASER", "HẬU TRƯỜNG"] as const).map((tab) => (
+            {(["FULL"] as const).map((tab) => (
               <button
                 key={tab}
                 onClick={() => {
                   setActiveTab(tab);
-                  setIsPlaying(false);
                 }}
                 className={`min-h-[48px] rounded px-5 font-bold transition ${activeTab === tab ? "bg-[color:var(--neon-pink)] text-white shadow-[0_0_16px_rgba(255,0,255,0.4)]" : "bg-white/5 text-[color:var(--text-muted)] hover:bg-white/10"}`}
               >
@@ -476,9 +496,12 @@ export function ShortFilmPage() {
         {/* Description Banner */}
         <div className="grid gap-6 rounded-lg border border-[color:var(--neon-cyan)]/30 bg-gradient-to-r from-[color:var(--surface)] to-[color:var(--background)] p-6 md:grid-cols-[200px_1fr] items-start">
           <div className="relative overflow-hidden rounded bg-gradient-to-b from-[color:var(--neon-cyan)]/30 to-[color:var(--background)] aspect-[3/4] flex items-center justify-center border border-[color:var(--neon-cyan)]/50">
-            <span className="font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white tracking-widest text-center">
-              PHIM<br />NGẮN
-            </span>
+            <Image
+              src="/media/thumbnails/shortfilm-thumbnail.png"
+              alt="Phim ngắn thumbnail"
+              fill
+              className="object-cover"
+            />
           </div>
           <div className="space-y-4">
             <h3 className="font-[family-name:var(--font-heading)] text-3xl font-bold text-[color:var(--neon-green)]">Tín hiệu mất tập trung</h3>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
-import { MAX_PER_GAME_SCORE } from "./types";
+import { MEMORY_MAX_SCORE } from "./types";
 
 const EMOJIS = ["🎮","🎯","⭐","🔥","💎","🎪","🎭","🎨","🚀","🌙","🎵","🍀","🌈","🦊","🐼","🦄","🍕","⚡","🎁","🏆"];
 
@@ -13,13 +13,14 @@ interface GridConfig {
 }
 
 function getGridConfig(memLevel: number): GridConfig {
-  if (memLevel < 10) return { pairs: 2, cols: 2, totalCards: 4 };
-  if (memLevel < 17) return { pairs: 3, cols: 3, totalCards: 6 };
+  if (memLevel <= 4) return { pairs: 2, cols: 2, totalCards: 4 };
+  if (memLevel <= 8) return { pairs: 3, cols: 3, totalCards: 6 };
   return { pairs: 4, cols: 3, totalCards: 8 };
 }
 
 function getTimerDuration(memLevel: number): number {
-  return Math.max(25, 30 - (memLevel - 1) * 0.5);
+  void memLevel;
+  return 45;
 }
 
 function shuffleArray<T>(arr: T[]): T[] {
@@ -143,7 +144,7 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
     const nextLevel = memoryProgressLevel + 1;
     setMemoryProgressLevel(nextLevel);
     setup(nextLevel);
-    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+    onFail();
   }, [timeLeft, isPlaying, isComplete, memoryProgressLevel, setup, onFail]);
 
   // Penalty reset
@@ -195,7 +196,7 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
             matchedCountRef.current++;
 
             if (matchedCountRef.current >= gridConfig.pairs) {
-              if (gameScoreRef.current < MAX_PER_GAME_SCORE) onScore();
+              if (gameScoreRef.current < MEMORY_MAX_SCORE) onScore();
               const nextLevel = memoryProgressLevel + 1;
               setMemoryProgressLevel(nextLevel);
               setup(nextLevel);

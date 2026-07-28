@@ -103,7 +103,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+    onFail();
     setRound(generateRound());
     startTimer();
   }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
@@ -159,7 +159,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
         startTimer();
       } else {
         setRound(generateRound());
-        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+        onFail();
         // Timer stopped via parent
       }
     },

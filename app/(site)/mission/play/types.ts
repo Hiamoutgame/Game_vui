@@ -30,6 +30,16 @@ export type GameLevels = Record<GameId, number>;
 export const VICTORY_LEVEL = 20;
 export const MAX_PER_GAME_SCORE = 20;
 
+/** Memory game (km) has fewer levels than the other three games. */
+export const MEMORY_MAX_SCORE = 12;
+
+export const GAME_MAX_SCORES: Record<GameId, number> = {
+  km: MEMORY_MAX_SCORE,
+  ht: MAX_PER_GAME_SCORE,
+  nc: MAX_PER_GAME_SCORE,
+  px: MAX_PER_GAME_SCORE,
+};
+
 export interface GameState {
   totalScore: number;
   totalFails: number;

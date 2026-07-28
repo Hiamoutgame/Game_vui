@@ -71,10 +71,10 @@ export function DistractionNotifications() {
     const initialTimeout = setManagedTimeout(addBurst, 500);
 
     const interval = setInterval(() => {
-      if (Math.random() > 0.4) {
+      if (Math.random() > 0.05) {
         addBurst();
       }
-    }, 5500);
+    }, 4000);
 
     return () => {
       clearTimeout(initialTimeout);
@@ -118,11 +118,11 @@ export function DistractionNotifications() {
                 {n.label}
               </span>
             </div>
-            
+
             <p className="font-[family-name:var(--font-body)] text-[13px] font-bold leading-[1.15] text-white">
               {n.content}
             </p>
-            
+
             <div
               className="mt-0.5 h-[2px] w-full rounded-full"
               style={{

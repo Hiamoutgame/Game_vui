@@ -71,7 +71,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+    onFail();
     setCurrentDir(DIRECTIONS[Math.floor(Math.random() * 4)]);
     startTimer();
   }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
@@ -121,7 +121,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
         const duration = getTimerDuration(arrowLevel);
         setTimeLeft(duration);
       } else {
-        if (gameScoreRef.current < MAX_PER_GAME_SCORE) onFail();
+        onFail();
       }
     },
     [isPlaying, isComplete, currentDir, onScore, onFail, arrowLevel]
