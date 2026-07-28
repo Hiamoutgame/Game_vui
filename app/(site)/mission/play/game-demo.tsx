@@ -322,10 +322,10 @@ function CatchPractice({ onComplete }: PracticeProps) {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key.toLowerCase() === "a" || event.key === "ArrowLeft") {
+      if (event.key.toLowerCase() === "a") {
         moveBucket(bucketXRef.current - 8);
       }
-      if (event.key.toLowerCase() === "d" || event.key === "ArrowRight") {
+      if (event.key.toLowerCase() === "d") {
         moveBucket(bucketXRef.current + 8);
       }
     };
@@ -377,10 +377,10 @@ function CatchPractice({ onComplete }: PracticeProps) {
       </div>
       <div className="flex justify-center gap-2">
         <button type="button" className={`${buttonBaseClass} border-white/15 bg-white/10 text-white`} onClick={() => moveBucket(bucketXRef.current - 8)}>
-          A / ←
+          A
         </button>
         <button type="button" className={`${buttonBaseClass} border-white/15 bg-white/10 text-white`} onClick={() => moveBucket(bucketXRef.current + 8)}>
-          D / →
+          D
         </button>
       </div>
       <p className="min-h-5 text-xs text-[color:var(--text-muted)]">{message}</p>
@@ -397,7 +397,7 @@ function WordPractice({ onComplete }: PracticeProps) {
 
     if (isCorrect) {
       setComplete(true);
-      setMessage("Đúng. Màu đỏ không khớp với nghĩa BLUE.");
+      setMessage("Đúng. Màu đỏ không khớp với nghĩa XANH.");
       onComplete();
     } else {
       setMessage("Chưa đúng. Hãy xét màu hiển thị, không chỉ đọc nghĩa chữ.");
@@ -407,7 +407,7 @@ function WordPractice({ onComplete }: PracticeProps) {
   return (
     <div className="flex min-h-[150px] flex-col items-center justify-center gap-3">
       <p className="text-xs font-bold text-[color:var(--neon-cyan)]">Màu và nghĩa có khớp không?</p>
-      <div className="text-3xl font-extrabold tracking-widest text-red-500">BLUE</div>
+      <div className="text-3xl font-extrabold tracking-widest text-red-500">XANH</div>
       <div className="flex gap-2">
         <button type="button" onClick={() => answer(false)} className={`${buttonBaseClass} border-[color:var(--neon-green)] bg-[color:var(--neon-green)] text-black`}>
           ĐÚNG

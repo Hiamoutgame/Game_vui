@@ -48,7 +48,8 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
   const updateLevel = useCallback(
     (totalScore: number, activeCount: number, currentLevel: number) => {
       const maxLvl = demoCapRef.current || VICTORY_LEVEL;
-      const newLevel = Math.min(maxLvl, Math.floor(totalScore / activeCount) + 1);
+      const calculatedLevel = Math.min(maxLvl, Math.floor(totalScore / activeCount) + 1);
+      const newLevel = Math.max(currentLevel, calculatedLevel);
       if (newLevel > currentLevel) {
         soundSystem.levelUp();
       }
@@ -136,31 +137,16 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       setState((prev) => {
         if (!prev.isPlaying || prev.victory) return prev;
 
-        const currentGameScore = prev.gameScores[gameId] || 0;
         const newFails = { ...prev.gameFailures, [gameId]: (prev.gameFailures[gameId] || 0) + 1 };
-
-        if (currentGameScore <= 0 && prev.totalScore <= 0) {
-          return { ...prev, totalFails: prev.totalFails + 1, gameFailures: newFails };
-        }
-
-        const newScores = {
-          ...prev.gameScores,
-          [gameId]: Math.max(0, currentGameScore - 1),
-        };
-        const newTotal = Math.max(0, prev.totalScore - 1);
-        const newLevel = updateLevel(newTotal, prev.activeGames.length, prev.currentLevel);
 
         return {
           ...prev,
-          totalScore: newTotal,
           totalFails: prev.totalFails + 1,
-          gameScores: newScores,
           gameFailures: newFails,
-          currentLevel: newLevel,
         };
       });
     },
-    [updateLevel]
+    []
   );
 
   const endGame = useCallback(() => {

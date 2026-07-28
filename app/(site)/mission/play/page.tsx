@@ -245,10 +245,6 @@ function GamePlayContent() {
                 {activeTaskIds.length}/4 TÁC VỤ
               </h2>
             </div>
-            <div>
-              <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Gián đoạn</p>
-              <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-[color:var(--neon-pink)]">{engine.totalFails}</h2>
-            </div>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handleEndGame} className="inline-flex min-h-9 items-center justify-center rounded border border-[color:var(--neon-pink)]/60 bg-transparent px-3 py-1.5 text-xs font-bold text-[color:var(--neon-pink)] hover:bg-[rgba(255,0,255,0.1)] transition">

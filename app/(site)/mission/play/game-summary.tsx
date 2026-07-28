@@ -43,7 +43,6 @@ export default function GameSummary({
   maxLevel = VICTORY_LEVEL,
   gameStartTime,
   gameScores,
-  gameFailures,
   activeGames,
   expectedPercent = null,
   onBackHome, 
@@ -61,7 +60,7 @@ export default function GameSummary({
   const mins = Math.floor(elapsed / 60);
   const secs = elapsed % 60;
   const netScore = Math.max(0, totalScore - totalFails);
-  const progressPercent = maxTotal > 0 ? Math.max(0, parseFloat(((netScore / maxTotal) * 100).toFixed(1))) : 0;
+  const progressPercent = totalScore > 0 ? Math.max(0, parseFloat(((netScore / totalScore) * 100).toFixed(1))) : 0;
   const percentGap = expectedPercent === null ? null : parseFloat((progressPercent - expectedPercent).toFixed(1));
   const insight = getInsight(activeGames.length, totalFails, isVictory);
 
@@ -91,7 +90,6 @@ export default function GameSummary({
           {activeGames.map((g) => {
             const score = gameScores[g] || 0;
             const complete = score >= MAX_PER_GAME_SCORE;
-            const fails = gameFailures[g] || 0;
             return (
               <div
                 key={g}
@@ -102,9 +100,6 @@ export default function GameSummary({
                 </span>
                 <span className={complete ? "text-[color:var(--neon-green)] font-bold" : "text-[color:var(--neon-pink)] font-bold"}>
                   {score}/{MAX_PER_GAME_SCORE} {complete ? "✅" : ""}
-                  {fails > 0 && (
-                    <small className="text-[color:var(--text-muted)] ml-1">(-{fails})</small>
-                  )}
                 </span>
               </div>
             );
@@ -122,7 +117,7 @@ export default function GameSummary({
         <div className="flex justify-between px-3 py-3 bg-black/35 rounded-lg mb-3 font-bold text-white">
           <span>Điểm ròng</span>
           <span>
-            {netScore} / {maxTotal}
+            {netScore} / {totalScore}
           </span>
         </div>
 

@@ -18,7 +18,7 @@ interface BallGameProps {
 }
 
 function getFallTime(level: number): number {
-  return Math.max(5, 10 - (level - 1) * 0.5);
+  return Math.max(1.8, 3.75 - (level - 1) * 0.15);
 }
 
 const BALL_SIZE = 20;
@@ -46,35 +46,46 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
   const caughtTimeoutRef = useRef<number | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isPressedRef = useRef(false);
+  const globalLevelRef = useRef(globalLevel);
+  const onScoreRef = useRef(onScore);
+  const onFailRef = useRef(onFail);
+  const [levelResetKey, setLevelResetKey] = useState(0);
 
   // Sync refs after render
   useEffect(() => {
     isPlayingRef.current = isPlaying;
+    onScoreRef.current = onScore;
+    onFailRef.current = onFail;
   });
+
+  useEffect(() => {
+    if (globalLevel > globalLevelRef.current) {
+      globalLevelRef.current = globalLevel;
+      setLevelResetKey((value) => value + 1);
+      return;
+    }
+
+    globalLevelRef.current = globalLevel;
+  }, [globalLevel]);
   const lastXRef = useRef(0);
-  const speedRef = useRef(1.5);
+  const fallProgressRef = useRef(0);
+  const lastFrameTimeRef = useRef<number | null>(null);
 
   const isThisComplete = isComplete || gameScore >= MAX_PER_GAME_SCORE;
-
-  // Calculate speed based on level and container height
-  const calcSpeed = useCallback(() => {
-    if (!areaRef.current) return 1.5;
-    const height = areaRef.current.offsetHeight;
-    const fallTime = getFallTime(globalLevel);
-    return height / (fallTime * 60);
-  }, [globalLevel]);
 
   // Game loop
   useEffect(() => {
     if (!isPlaying || isThisComplete) return;
 
-    speedRef.current = calcSpeed();
-
-    const animate = () => {
-      if (!isPlayingRef.current) return;
-
-      ballRef.current.y += speedRef.current;
+    const resetBall = (areaWidth: number) => {
+      fallProgressRef.current = 0;
+      lastFrameTimeRef.current = null;
+      ballRef.current = { x: getRandomBallX(areaWidth), y: 0 };
       setBallPos({ ...ballRef.current });
+    };
+
+    const animate = (timestamp: number) => {
+      if (!isPlayingRef.current) return;
 
       if (!areaRef.current) {
         frameRef.current = requestAnimationFrame(animate);
@@ -83,6 +94,13 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
 
       const areaHeight = areaRef.current.offsetHeight;
       const areaWidth = areaRef.current.offsetWidth;
+      const fallTimeMs = getFallTime(globalLevelRef.current) * 1000;
+      const deltaTime = lastFrameTimeRef.current === null ? 0 : timestamp - lastFrameTimeRef.current;
+      lastFrameTimeRef.current = timestamp;
+      fallProgressRef.current = Math.min(1, fallProgressRef.current + deltaTime / fallTimeMs);
+      ballRef.current.y = fallProgressRef.current * Math.max(0, areaHeight - BALL_SIZE);
+      setBallPos({ ...ballRef.current });
+
       const ballBottom = ballRef.current.y + BALL_SIZE;
 
       // Check collision at bucket level
@@ -99,27 +117,23 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
           const caughtX = Math.max(bucketLeftPx, Math.min(bucketRightPx - BALL_SIZE, ballLeft));
           ballRef.current = { x: caughtX, y: getCaughtBallY(areaHeight) };
           setBallPos({ ...ballRef.current });
-          onScore();
+          onScoreRef.current();
           caughtTimeoutRef.current = window.setTimeout(() => {
             if (!areaRef.current || !isPlayingRef.current) return;
 
-            ballRef.current = { x: getRandomBallX(areaRef.current.offsetWidth), y: 0 };
-            setBallPos({ ...ballRef.current });
-            speedRef.current = calcSpeed();
+            resetBall(areaRef.current.offsetWidth);
             frameRef.current = requestAnimationFrame(animate);
           }, CATCH_HOLD_MS);
           return;
         } else {
           // Missed
-          onFail();
-          ballRef.current = { x: getRandomBallX(areaWidth), y: 0 };
-          speedRef.current = calcSpeed();
+          onFailRef.current();
+          resetBall(areaWidth);
         }
       } else if (ballRef.current.y >= areaHeight - BALL_SIZE) {
         // Past bottom
-        onFail();
-        ballRef.current = { x: getRandomBallX(areaWidth), y: 0 };
-        speedRef.current = calcSpeed();
+        onFailRef.current();
+        resetBall(areaWidth);
       }
 
       setBallPos({ ...ballRef.current });
@@ -128,7 +142,7 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
 
     // Reset ball
     if (areaRef.current) {
-      ballRef.current = { x: getRandomBallX(areaRef.current.offsetWidth), y: 0 };
+      resetBall(areaRef.current.offsetWidth);
     }
     frameRef.current = requestAnimationFrame(animate);
 
@@ -136,7 +150,7 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
       if (frameRef.current) cancelAnimationFrame(frameRef.current);
       if (caughtTimeoutRef.current) window.clearTimeout(caughtTimeoutRef.current);
     };
-  }, [isPlaying, isThisComplete, onScore, onFail, calcSpeed]);
+  }, [isPlaying, isThisComplete, levelResetKey]);
 
   // Penalty reset
   useEffect(() => {
