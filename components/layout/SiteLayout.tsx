@@ -1,5 +1,6 @@
 ﻿"use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -13,9 +14,10 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-50 border-b-2 border-[color:var(--neon-cyan)] bg-[linear-gradient(90deg,var(--neon-purple),var(--neon-blue))] shadow-[0_0_22px_rgba(130,0,255,0.55)]">
       <div className="mx-auto flex min-h-[84px] max-w-7xl items-center justify-between gap-6 px-5 md:px-10 lg:px-[72px]">
-        <Link className="font-[family-name:var(--font-heading)] text-xl font-bold uppercase leading-none tracking-wide text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]" href="/" onClick={() => setOpen(false)}>
-          <span className="block">VU TRU</span>
-          <span className="block">TASK VU</span>
+        <Link className="rounded-md p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]" href="/" onClick={() => setOpen(false)}>
+
+          <Image src="/logo-vttv.png" alt="Vũ Trụ Task Vụ" width={191} height={100} className="h-12 w-auto" priority />
+
         </Link>
 
         <nav className="hidden items-center gap-8 lg:flex" aria-label="Điều hướng chính">
@@ -77,12 +79,9 @@ export function SiteFooter() {
         <div className="sm:col-span-2 lg:col-span-1">
           <Link
             href="/"
-            className="inline-flex rounded font-[family-name:var(--font-heading)] text-3xl font-bold uppercase leading-[0.88] tracking-wide text-white transition hover:text-[color:var(--neon-cyan)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]"
+            className="inline-flex rounded transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--neon-cyan)]"
           >
-            <span>
-              VŨ TRỤ
-              <span className="block text-[color:var(--neon-cyan)]">TASK VỤ</span>
-            </span>
+            <Image src="/logo-vttv.png" alt="Vũ Trụ Task Vụ" width={191} height={100} className="h-10 w-auto" priority />
           </Link>
           <p className="mt-5 font-[family-name:var(--font-heading)] text-base font-bold text-white">{site.tagline}</p>
           <p className="mt-3 max-w-md text-sm leading-7 text-[color:var(--text-muted)]">{site.description}</p>

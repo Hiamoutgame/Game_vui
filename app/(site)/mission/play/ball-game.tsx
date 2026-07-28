@@ -6,7 +6,6 @@ import { MAX_PER_GAME_SCORE } from "./types";
 
 interface BallGameProps {
   compact?: boolean;
-  globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
   isComplete: boolean;
@@ -15,6 +14,7 @@ interface BallGameProps {
   onScore: () => void;
   onFail: () => void;
   onPenaltyReset: () => void;
+  onLevelChange?: (level: number) => void;
 }
 
 function getFallTime(level: number): number {
@@ -36,7 +36,8 @@ function getRandomBallX(areaWidth: number) {
   return Math.random() * Math.max(0, areaWidth - BALL_SIZE);
 }
 
-export default function BallGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: BallGameProps) {
+export default function BallGame({ compact = false, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: BallGameProps) {
+  const ballLevel = Math.max(1, gameScore + 1);
   const [ballPos, setBallPos] = useState({ x: 50, y: 0 });
   const [bucketPos, setBucketPos] = useState(50);
   const bucketPosRef = useRef(50);
@@ -46,7 +47,7 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
   const caughtTimeoutRef = useRef<number | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isPressedRef = useRef(false);
-  const globalLevelRef = useRef(globalLevel);
+  const ballLevelRef = useRef(ballLevel);
   const onScoreRef = useRef(onScore);
   const onFailRef = useRef(onFail);
   const [levelResetKey, setLevelResetKey] = useState(0);
@@ -59,14 +60,14 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
   });
 
   useEffect(() => {
-    if (globalLevel > globalLevelRef.current) {
-      globalLevelRef.current = globalLevel;
+    if (ballLevel > ballLevelRef.current) {
+      ballLevelRef.current = ballLevel;
       setLevelResetKey((value) => value + 1);
       return;
     }
 
-    globalLevelRef.current = globalLevel;
-  }, [globalLevel]);
+    ballLevelRef.current = ballLevel;
+  }, [ballLevel]);
   const lastXRef = useRef(0);
   const fallProgressRef = useRef(0);
   const lastFrameTimeRef = useRef<number | null>(null);
@@ -94,7 +95,7 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
 
       const areaHeight = areaRef.current.offsetHeight;
       const areaWidth = areaRef.current.offsetWidth;
-      const fallTimeMs = getFallTime(globalLevelRef.current) * 1000;
+      const fallTimeMs = getFallTime(ballLevelRef.current) * 1000;
       const deltaTime = lastFrameTimeRef.current === null ? 0 : timestamp - lastFrameTimeRef.current;
       lastFrameTimeRef.current = timestamp;
       fallProgressRef.current = Math.min(1, fallProgressRef.current + deltaTime / fallTimeMs);
@@ -158,6 +159,11 @@ export default function BallGame({ compact = false, globalLevel, gameScore, isPl
       setTimeout(onPenaltyReset, 600);
     }
   }, [penaltyKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Report per-game level to engine
+  useEffect(() => {
+    if (isPlaying && onLevelChange) onLevelChange(ballLevel);
+  }, [ballLevel, isPlaying, onLevelChange]);
 
   // Mouse/touch handlers
   const handleMouseDown = useCallback(

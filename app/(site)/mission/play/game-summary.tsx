@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { GAME_NAMES, GAME_ICONS, MAX_PER_GAME_SCORE, VICTORY_LEVEL } from "./types";
-import type { GameId, GameScores, GameFailures } from "./types";
+import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
 
 interface GameSummaryProps {
   isOpen: boolean;
@@ -15,6 +15,7 @@ interface GameSummaryProps {
   gameStartTime: number | null;
   gameScores: GameScores;
   gameFailures: GameFailures;
+  gameLevels?: GameLevels;
   activeGames: GameId[];
   expectedPercent?: number | null;
   onBackHome: () => void;
@@ -43,6 +44,7 @@ export default function GameSummary({
   maxLevel = VICTORY_LEVEL,
   gameStartTime,
   gameScores,
+  gameLevels,
   activeGames,
   expectedPercent = null,
   onBackHome, 
@@ -117,7 +119,7 @@ export default function GameSummary({
         <div className="flex justify-between px-3 py-3 bg-black/35 rounded-lg mb-3 font-bold text-white">
           <span>Điểm ròng</span>
           <span>
-            {netScore} / {totalScore}
+            {netScore} / {maxTotal}
           </span>
         </div>
 
@@ -128,8 +130,15 @@ export default function GameSummary({
             ⏱ Thời gian: {mins}m {secs}s
           </p>
           <p className="text-[color:var(--neon-purple)] font-bold">
-            📊 Cấp đạt được: {currentLevel} / {maxLevel}
+            📊 Cấp đạt được: Cấp {currentLevel} / {maxLevel}
           </p>
+          {gameLevels && (
+            <div className="text-xs text-[color:var(--text-muted)] space-y-0.5">
+              {activeGames.map((g) => (
+                <p key={g}>{GAME_ICONS[g]} {GAME_NAMES[g]}: Cấp {gameLevels[g] || 1}</p>
+              ))}
+            </div>
+          )}
         </div>
 
           {expectedPercent !== null && (

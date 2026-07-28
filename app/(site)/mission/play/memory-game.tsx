@@ -44,10 +44,12 @@ interface MemoryGameProps {
   onScore: () => void;
   onFail: () => void;
   onPenaltyReset: () => void;
+  onLevelChange?: (level: number) => void;
 }
 
-export default function MemoryGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: MemoryGameProps) {
-  const [memoryLevel, setMemoryLevel] = useState(1);
+export default function MemoryGame({ compact = false, globalLevel: _globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: MemoryGameProps) {
+  void _globalLevel;
+  const [memoryProgressLevel, setMemoryProgressLevel] = useState(1);
   const [cards, setCards] = useState<string[]>([]);
   const [gridConfig, setGridConfig] = useState<GridConfig>({ pairs: 2, cols: 2, totalCards: 4 });
   const [flippedIndices, setFlippedIndices] = useState<Set<number>>(new Set());
@@ -62,11 +64,13 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
   const isCompleteRef = useRef(isComplete);
   const wasPlayingRef = useRef(false);
   const timedOutRef = useRef(false);
+  const gameScoreRef = useRef(gameScore);
 
   // Sync refs after render
   useEffect(() => {
     isPlayingRef.current = isPlaying;
     isCompleteRef.current = isComplete;
+    gameScoreRef.current = gameScore;
   });
 
   const setup = useCallback(
@@ -92,22 +96,19 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
     []
   );
 
-  // Initialize and change card set only when mission level increases
+  // Initialize card set only when play state starts or restarts
   useEffect(() => {
     if (!isPlaying) {
       wasPlayingRef.current = false;
       return;
     }
 
-    const justStarted = !wasPlayingRef.current;
-    const nextLevel = Math.max(1, Math.min(MAX_PER_GAME_SCORE, globalLevel));
-    setMemoryLevel((currentLevel) => {
-      if (!justStarted && nextLevel <= currentLevel && cards.length > 0) return currentLevel;
-      setup(nextLevel);
-      return nextLevel;
-    });
+    if (!wasPlayingRef.current) {
+      setup(1);
+      setMemoryProgressLevel(1);
+    }
     wasPlayingRef.current = true;
-  }, [isPlaying, globalLevel, setup, cards.length]);
+  }, [isPlaying, setup]);
 
   // Timer
   useEffect(() => {
@@ -134,16 +135,16 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, onFail, memoryLevel, timerResetKey]);
+  }, [isPlaying, isComplete, timerResetKey]);
 
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    const nextMemoryLevel = memoryLevel >= MAX_PER_GAME_SCORE ? 1 : memoryLevel + 1;
-    setMemoryLevel(nextMemoryLevel);
-    setup(nextMemoryLevel);
+    const nextLevel = memoryProgressLevel + 1;
+    setMemoryProgressLevel(nextLevel);
+    setup(nextLevel);
     onFail();
-  }, [timeLeft, isPlaying, isComplete, memoryLevel, setup, onFail]);
+  }, [timeLeft, isPlaying, isComplete, memoryProgressLevel, setup, onFail]);
 
   // Penalty reset
   useEffect(() => {
@@ -153,7 +154,7 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
         setFlippedIndices(new Set());
         setLocked(false);
         flippedPairRef.current = [];
-        setTimeLeft(getTimerDuration(memoryLevel));
+        setTimeLeft(getTimerDuration(memoryProgressLevel));
         setTimerResetKey((value) => value + 1);
         onPenaltyReset();
       }, 600);
@@ -166,6 +167,11 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
       if (timerRef.current) clearInterval(timerRef.current);
     }
   }, [gameScore, isPlaying]);
+
+  // Report per-game level to engine
+  useEffect(() => {
+    if (isPlaying && onLevelChange) onLevelChange(memoryProgressLevel);
+  }, [memoryProgressLevel, isPlaying, onLevelChange]);
 
   const tryFlip = useCallback(
     (index: number) => {
@@ -198,10 +204,12 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
             onScore();
 
             if (matchedCountRef.current >= gridConfig.pairs) {
-              if (gameScore + matchedCountRef.current >= MAX_PER_GAME_SCORE) {
+              if (gameScoreRef.current + matchedCountRef.current >= MAX_PER_GAME_SCORE) {
                 // Memory complete – will be handled by parent
               } else {
-                setup(memoryLevel);
+                const nextLevel = memoryProgressLevel + 1;
+                setMemoryProgressLevel(nextLevel);
+                setup(nextLevel);
               }
             }
           }, 300);
@@ -218,7 +226,7 @@ export default function MemoryGame({ compact = false, globalLevel, gameScore, is
         }
       }
     },
-    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, setup, gameScore, memoryLevel]
+    [flippedIndices, matchedIndices, locked, cards, gridConfig.pairs, onScore, setup, memoryProgressLevel]
   );
 
   // Keyboard handler

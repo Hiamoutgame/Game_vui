@@ -47,7 +47,6 @@ function getTimerDuration(level: number): number {
 
 interface WordGameProps {
   compact?: boolean;
-  globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
   isComplete: boolean;
@@ -56,27 +55,30 @@ interface WordGameProps {
   onScore: () => void;
   onFail: () => void;
   onPenaltyReset: () => void;
+  onLevelChange?: (level: number) => void;
 }
 
-export default function WordGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: WordGameProps) {
+export default function WordGame({ compact = false, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: WordGameProps) {
+  const wordLevel = Math.max(1, gameScore + 1);
   const [round, setRound] = useState<StroopRound>(INITIAL_ROUND);
   const [timeLeft, setTimeLeft] = useState(30);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const isPlayingRef = useRef(isPlaying);
   const isCompleteRef = useRef(isComplete);
   const wasPlayingRef = useRef(false);
-  const currentRoundLevelRef = useRef<number | null>(null);
   const timedOutRef = useRef(false);
+  const gameScoreRef = useRef(gameScore);
 
   // Sync refs after render
   useEffect(() => {
     isPlayingRef.current = isPlaying;
     isCompleteRef.current = isComplete;
+    gameScoreRef.current = gameScore;
   });
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const duration = getTimerDuration(globalLevel);
+    const duration = getTimerDuration(wordLevel);
     timedOutRef.current = false;
     setTimeLeft(duration);
 
@@ -96,7 +98,7 @@ export default function WordGame({ compact = false, globalLevel, gameScore, isPl
         return next;
       });
     }, 1000);
-  }, [globalLevel]);
+  }, [wordLevel]);
 
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
@@ -106,24 +108,21 @@ export default function WordGame({ compact = false, globalLevel, gameScore, isPl
 
   const isGameMaxed = gameScore >= MAX_PER_GAME_SCORE;
 
-  // Initialize round on start, and reshuffle only on mission level changes
-  // or when the player answers inside this game.
+  // Initialize round on start; timer uses wordLevel derived from gameScore.
+  // Round (word/color) stays the same — only regenerated on correct answer.
   useEffect(() => {
     if (!isPlaying || isComplete || isGameMaxed) {
       wasPlayingRef.current = false;
-      currentRoundLevelRef.current = null;
       if (timerRef.current) clearInterval(timerRef.current);
       return;
     }
 
     const justStarted = !wasPlayingRef.current;
-    const levelChanged = currentRoundLevelRef.current !== globalLevel;
 
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- game timer/round must initialize when play state starts or level timing changes
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- game timer must initialize when play state starts
     startTimer();
-    if (justStarted || levelChanged) {
+    if (justStarted) {
       setRound(generateRound());
-      currentRoundLevelRef.current = globalLevel;
     }
 
     wasPlayingRef.current = true;
@@ -131,7 +130,7 @@ export default function WordGame({ compact = false, globalLevel, gameScore, isPl
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, isGameMaxed, globalLevel, startTimer]);
+  }, [isPlaying, isComplete, isGameMaxed, startTimer]);
 
   // Penalty reset
   useEffect(() => {
@@ -144,9 +143,14 @@ export default function WordGame({ compact = false, globalLevel, gameScore, isPl
     }
   }, [penaltyKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Report per-game level to engine
+  useEffect(() => {
+    if (isPlaying && onLevelChange) onLevelChange(wordLevel);
+  }, [wordLevel, isPlaying, onLevelChange]);
+
   const handleAnswer = useCallback(
     (playerSaidYes: boolean) => {
-      if (!isPlaying || isComplete || gameScore >= MAX_PER_GAME_SCORE) return;
+      if (!isPlaying || isComplete || gameScoreRef.current >= MAX_PER_GAME_SCORE) return;
 
       if (playerSaidYes === round.correctAnswer) {
         soundSystem.wordCorrect();
@@ -159,7 +163,7 @@ export default function WordGame({ compact = false, globalLevel, gameScore, isPl
         // Timer stopped via parent
       }
     },
-    [isPlaying, isComplete, gameScore, round, onScore, onFail, startTimer]
+    [isPlaying, isComplete, round, onScore, onFail, startTimer]
   );
 
   // Keyboard: Y/N

@@ -16,7 +16,6 @@ function getTimerDuration(level: number): number {
 
 interface ArrowGameProps {
   compact?: boolean;
-  globalLevel: number;
   gameScore: number;
   isPlaying: boolean;
   isComplete: boolean;
@@ -25,9 +24,11 @@ interface ArrowGameProps {
   onScore: () => void;
   onFail: () => void;
   onPenaltyReset: () => void;
+  onLevelChange?: (level: number) => void;
 }
 
-export default function ArrowGame({ compact = false, globalLevel, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset }: ArrowGameProps) {
+export default function ArrowGame({ compact = false, gameScore, isPlaying, isComplete, penaltyKey, errorFlash, onScore, onFail, onPenaltyReset, onLevelChange }: ArrowGameProps) {
+  const arrowLevel = Math.max(1, gameScore + 1);
   const [currentDir, setCurrentDir] = useState<Direction>("up");
   const [timeLeft, setTimeLeft] = useState(30);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,7 +44,7 @@ export default function ArrowGame({ compact = false, globalLevel, gameScore, isP
 
   const startTimer = useCallback(() => {
     if (timerRef.current) clearInterval(timerRef.current);
-    const duration = getTimerDuration(globalLevel);
+    const duration = getTimerDuration(arrowLevel);
     timedOutRef.current = false;
     setTimeLeft(duration);
 
@@ -63,7 +64,7 @@ export default function ArrowGame({ compact = false, globalLevel, gameScore, isP
         return next;
       });
     }, 1000);
-  }, [globalLevel]);
+  }, [arrowLevel]);
 
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
@@ -85,7 +86,7 @@ export default function ArrowGame({ compact = false, globalLevel, gameScore, isP
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isPlaying, isComplete, gameScore, globalLevel, penaltyKey, startTimer]);
+  }, [isPlaying, isComplete, gameScore, arrowLevel, penaltyKey, startTimer]);
 
   // Penalty reset
   useEffect(() => {
@@ -99,6 +100,11 @@ export default function ArrowGame({ compact = false, globalLevel, gameScore, isP
     }
   }, [penaltyKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Report per-game level to engine
+  useEffect(() => {
+    if (isPlaying && onLevelChange) onLevelChange(arrowLevel);
+  }, [arrowLevel, isPlaying, onLevelChange]);
+
   const handleSelect = useCallback(
     (dir: Direction) => {
       if (!isPlaying || isComplete || gameScore >= MAX_PER_GAME_SCORE) return;
@@ -108,13 +114,13 @@ export default function ArrowGame({ compact = false, globalLevel, gameScore, isP
         soundSystem.arrowCorrect();
         onScore();
         pickRandom();
-        const duration = getTimerDuration(globalLevel);
+        const duration = getTimerDuration(arrowLevel);
         setTimeLeft(duration);
       } else {
         onFail();
       }
     },
-    [isPlaying, isComplete, gameScore, currentDir, onScore, onFail, globalLevel]
+    [isPlaying, isComplete, gameScore, currentDir, onScore, onFail, arrowLevel]
   );
 
   // Keyboard handler

@@ -10,8 +10,9 @@ import WordGame from "./word-game";
 import ArrowGame from "./arrow-game";
 import GameDemo from "./game-demo";
 import GameSummary from "./game-summary";
-import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL } from "./types";
+import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL, MAX_PER_GAME_SCORE } from "./types";
 import type { GameId } from "./types";
+import { DistractionNotifications } from "@/components/ui/distraction-notifications";
 
 function GamePlayContent() {
   const router = useRouter();
@@ -80,8 +81,10 @@ function GamePlayContent() {
     }
   }, [engine.victory, engine.isPlaying, showSummary, isMultiTrial]);
 
-  // All active games maxed out
-  const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= 20);
+  // All active games reached their own target score.
+  const targetScore = isMultiTrial ? 4 : MAX_PER_GAME_SCORE;
+  const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= targetScore);
+  const getDisplayScore = (gameId: GameId) => Math.min(engine.gameScores[gameId] || 0, targetScore);
 
   const handleDemoFinish = useCallback(() => {
     setDemoMode(null);
@@ -110,6 +113,13 @@ function GamePlayContent() {
       setTimeout(() => setErrorFlash(false), 400);
       actions.penalizeGame(gameId);
       setPenaltyKeys((prev) => ({ ...prev, [gameId]: (prev[gameId] || 0) + 1 }));
+    },
+    [actions]
+  );
+
+  const handleLevelChange = useCallback(
+    (gameId: GameId, level: number) => {
+      actions.setGameLevel(gameId, level);
     },
     [actions]
   );
@@ -234,10 +244,14 @@ function GamePlayContent() {
               <h2 className="font-[family-name:var(--font-heading)] text-xl font-bold text-white">{engine.totalScore} XP</h2>
             </div>
             <div>
-              <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Cấp độ</p>
-              <span className="inline-block bg-[color:var(--neon-purple)] text-white px-3 py-0.5 rounded-full font-bold text-xs">
-                Cấp {engine.currentLevel}/{maxLevel}
-              </span>
+              <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Điểm từng tác vụ</p>
+              <div className="flex flex-wrap gap-1.5 mt-0.5">
+                {activeTaskIds.map((g) => (
+                  <span key={g} className="inline-block border border-white/10 bg-black/35 px-2 py-0.5 font-mono text-[10px] font-bold text-white">
+                    {GAME_NUMBERS[g]}: {getDisplayScore(g)}/{targetScore}
+                  </span>
+                ))}
+              </div>
             </div>
             <div>
               <p className="font-mono text-xs uppercase tracking-wider text-[color:var(--text-muted)]">Đang xử lý</p>
@@ -291,6 +305,7 @@ function GamePlayContent() {
                   onScore={() => handleScore("km")}
                   onFail={() => handleFail("km")}
                   onPenaltyReset={() => handlePenaltyReset()}
+                  onLevelChange={(lvl) => handleLevelChange("km", lvl)}
                 />
               </div>
             )}
@@ -309,7 +324,6 @@ function GamePlayContent() {
                 </div>
                 <BallGame
                   compact={isDenseGrid}
-                  globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.ht || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
                   isComplete={actions.isGameComplete("ht")}
@@ -318,6 +332,7 @@ function GamePlayContent() {
                   onScore={() => handleScore("ht")}
                   onFail={() => handleFail("ht")}
                   onPenaltyReset={() => handlePenaltyReset()}
+                  onLevelChange={(lvl) => handleLevelChange("ht", lvl)}
                 />
               </div>
             )}
@@ -336,7 +351,6 @@ function GamePlayContent() {
                 </div>
                 <WordGame
                   compact={isDenseGrid}
-                  globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.nc || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
                   isComplete={actions.isGameComplete("nc")}
@@ -345,6 +359,7 @@ function GamePlayContent() {
                   onScore={() => handleScore("nc")}
                   onFail={() => handleFail("nc")}
                   onPenaltyReset={() => handlePenaltyReset()}
+                  onLevelChange={(lvl) => handleLevelChange("nc", lvl)}
                 />
               </div>
             )}
@@ -363,7 +378,6 @@ function GamePlayContent() {
                 </div>
                 <ArrowGame
                   compact={isDenseGrid}
-                  globalLevel={engine.currentLevel}
                   gameScore={engine.gameScores.px || 0}
                   isPlaying={engine.isPlaying && !engine.victory}
                   isComplete={actions.isGameComplete("px")}
@@ -372,6 +386,7 @@ function GamePlayContent() {
                   onScore={() => handleScore("px")}
                   onFail={() => handleFail("px")}
                   onPenaltyReset={() => handlePenaltyReset()}
+                  onLevelChange={(lvl) => handleLevelChange("px", lvl)}
                 />
               </div>
             )}
@@ -390,11 +405,13 @@ function GamePlayContent() {
         gameStartTime={engine.gameStartTime}
         gameScores={engine.gameScores}
         gameFailures={engine.gameFailures}
+        gameLevels={engine.gameLevels}
         activeGames={activeTaskIds}
         expectedPercent={expectedPercent}
         onBackHome={handleBackHome}
         onClose={handleBackToConfig}
       />
+      {engine.isPlaying && !engine.victory && <DistractionNotifications />}
     </main>
   );
 }

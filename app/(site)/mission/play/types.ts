@@ -25,6 +25,7 @@ export const GAME_NUMBERS: Record<GameId, string> = {
 
 export type GameScores = Record<GameId, number>;
 export type GameFailures = Record<GameId, number>;
+export type GameLevels = Record<GameId, number>;
 
 export const VICTORY_LEVEL = 20;
 export const MAX_PER_GAME_SCORE = 20;

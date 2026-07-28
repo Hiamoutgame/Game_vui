@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { NeonButton } from "@/components/ui/NeonButton";
 import { NeonCard } from "@/components/ui/NeonCard";
@@ -18,7 +19,9 @@ export default function Home() {
         <div className="absolute left-10 top-36 hidden rounded border border-[color:rgba(39,255,255,0.5)] bg-[color:rgba(20,7,60,0.8)] px-4 py-2 font-mono text-xs font-bold text-[color:var(--neon-cyan)] shadow-[0_0_18px_rgba(39,255,255,0.25)] md:block" aria-hidden="true">ALT + TAB // DỊCH CHUYỂN</div>
         <div className="absolute right-14 top-56 hidden rounded border border-[color:rgba(39,255,255,0.5)] bg-[color:rgba(20,7,60,0.8)] px-4 py-2 font-mono text-xs font-bold text-[color:var(--neon-pink)] shadow-[0_0_18px_rgba(39,255,255,0.25)] lg:block" aria-hidden="true">FOCUS NOT FOUND</div>
         <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 text-center">
-          <h1 className="neon-text whitespace-pre-line font-[family-name:var(--font-heading)] text-6xl font-bold uppercase leading-[0.94] text-white md:text-8xl">VŨ TRỤ<br />TASK VỤ</h1>
+          <h1>
+            <Image src="/logo-vttv.png" alt="Vũ Trụ Task Vụ" width={574} height={300} className="mx-auto h-auto max-h-32 w-auto max-w-full" priority />
+          </h1>
           <p className="text-2xl font-bold text-white md:text-3xl">{site.tagline}</p>
           <p className="max-w-3xl text-base leading-8 text-[color:var(--text-muted)] md:text-lg">{site.description}</p>
           <div className="flex flex-col gap-4 sm:flex-row">

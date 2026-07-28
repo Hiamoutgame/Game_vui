@@ -1,11 +1,11 @@
 ﻿import type { Metadata } from "next";
-import { Be_Vietnam_Pro, Chakra_Petch, Geist_Mono } from "next/font/google";
+import { Unbounded, Geist_Mono } from "next/font/google";
 import { SiteFooter, SiteHeader, SkipLink } from "@/components/layout/SiteLayout";
 import { site } from "@/libs/content/site";
 import "./globals.css";
 
-const bodyFont = Be_Vietnam_Pro({ variable: "--font-body", subsets: ["vietnamese"], weight: ["400", "500", "600", "700"] });
-const headingFont = Chakra_Petch({ variable: "--font-heading", subsets: ["vietnamese"], weight: ["400", "600", "700"] });
+const bodyFont = Unbounded({ variable: "--font-body", subsets: ["latin"], weight: ["400", "500", "600", "700"] });
+const headingFont = Unbounded({ variable: "--font-heading", subsets: ["latin"], weight: ["400", "600", "700"] });
 const monoFont = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {

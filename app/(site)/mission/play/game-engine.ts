@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import type { GameId, GameScores, GameFailures } from "./types";
+import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
 import { VICTORY_LEVEL, MAX_PER_GAME_SCORE } from "./types";
 import { soundSystem } from "./sound-system";
 
@@ -14,6 +14,7 @@ export interface GameEngineState {
   gameStartTime: number | null;
   gameScores: GameScores;
   gameFailures: GameFailures;
+  gameLevels: GameLevels;
   activeGames: GameId[];
   completedGames: Set<GameId>;
 }
@@ -23,6 +24,7 @@ export interface GameEngineActions {
   addScore: (gameId: GameId) => void;
   penalizeGame: (gameId: GameId) => void;
   checkGameComplete: (gameId: GameId) => boolean;
+  setGameLevel: (gameId: GameId, level: number) => void;
   endGame: () => void;
   resetGameState: () => void;
   isGameComplete: (gameId: GameId) => boolean;
@@ -38,6 +40,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
     gameStartTime: null,
     gameScores: { km: 0, ht: 0, nc: 0, px: 0 },
     gameFailures: { km: 0, ht: 0, nc: 0, px: 0 },
+    gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
     activeGames: [],
     completedGames: new Set<GameId>(),
   });
@@ -46,9 +49,10 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
   const penalizeTimeoutsRef = useRef<Map<GameId, ReturnType<typeof setTimeout>>>(new Map());
 
   const updateLevel = useCallback(
-    (totalScore: number, activeCount: number, currentLevel: number) => {
+    (scores: GameScores, active: GameId[], currentLevel: number) => {
       const maxLvl = demoCapRef.current || VICTORY_LEVEL;
-      const calculatedLevel = Math.min(maxLvl, Math.floor(totalScore / activeCount) + 1);
+      const lowestActiveScore = active.length > 0 ? Math.min(...active.map((g) => scores[g] || 0)) : 0;
+      const calculatedLevel = Math.min(maxLvl, lowestActiveScore + 1);
       const newLevel = Math.max(currentLevel, calculatedLevel);
       if (newLevel > currentLevel) {
         soundSystem.levelUp();
@@ -59,11 +63,9 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
   );
 
   const checkVictory = useCallback(
-    (level: number, scores: GameScores, active: GameId[]) => {
-      if (demoCapRef.current && level >= demoCapRef.current) return true;
-      if (level >= VICTORY_LEVEL && !demoCapRef.current) return true;
-      const allMaxed = active.every((g) => (scores[g] || 0) >= MAX_PER_GAME_SCORE);
-      return allMaxed;
+    (scores: GameScores, active: GameId[]) => {
+      const targetScore = demoCapRef.current || MAX_PER_GAME_SCORE;
+      return active.length > 0 && active.every((g) => (scores[g] || 0) >= targetScore);
     },
     []
   );
@@ -93,6 +95,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
         gameStartTime: Date.now(),
         gameScores: initialScores,
         gameFailures: initialFailures,
+        gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
         activeGames: games,
         completedGames: new Set<GameId>(),
       });
@@ -108,11 +111,11 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
 
         const newScores = { ...prev.gameScores, [gameId]: (prev.gameScores[gameId] || 0) + 1 };
         const newTotal = prev.totalScore + 1;
-        const newLevel = updateLevel(newTotal, prev.activeGames.length, prev.currentLevel);
+        const newLevel = updateLevel(newScores, prev.activeGames, prev.currentLevel);
         const newCompleted = new Set(prev.completedGames);
         checkGameCompleteFn(gameId, newScores, newCompleted);
 
-        const didVictory = checkVictory(newLevel, newScores, prev.activeGames);
+        const didVictory = checkVictory(newScores, prev.activeGames);
         if (didVictory) {
           soundSystem.levelUp();
         }
@@ -165,6 +168,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       gameStartTime: null,
       gameScores: { km: 0, ht: 0, nc: 0, px: 0 },
       gameFailures: { km: 0, ht: 0, nc: 0, px: 0 },
+      gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
       activeGames: [],
       completedGames: new Set<GameId>(),
     });
@@ -175,6 +179,19 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       return state.completedGames.has(gameId);
     },
     [state.completedGames]
+  );
+
+  const setGameLevel = useCallback(
+    (gameId: GameId, level: number) => {
+      setState((prev) => {
+        if ((prev.gameLevels[gameId] || 1) >= level) return prev;
+        return {
+          ...prev,
+          gameLevels: { ...prev.gameLevels, [gameId]: level },
+        };
+      });
+    },
+    []
   );
 
   const checkGameComplete = useCallback(
@@ -188,6 +205,7 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
     startGame,
     addScore,
     penalizeGame,
+    setGameLevel,
     checkGameComplete,
     endGame,
     resetGameState,
