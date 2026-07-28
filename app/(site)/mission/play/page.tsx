@@ -84,7 +84,7 @@ function GamePlayContent() {
   // All active games reached their own target score.
   const targetScore = isMultiTrial ? 4 : undefined;
   const allComplete = activeTaskIds.every((g) => (engine.gameScores[g] || 0) >= (targetScore ?? (GAME_MAX_SCORES[g] || 20)));
-  const getDisplayScore = (gameId: GameId) => Math.min(engine.gameScores[gameId] || 0, targetScore ?? (GAME_MAX_SCORES[gameId] || 20));
+
 
   useEffect(() => {
     if (isMultiTrial || !engine.isPlaying || showSummary || !allComplete) return;
