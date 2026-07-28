@@ -84,8 +84,16 @@ export function MediaArchivePage() {
             {/* Photoshoot Card */}
             <NeonCard className="flex flex-col justify-between border-[color:var(--neon-cyan)]">
               <div>
-                <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-[color:var(--neon-cyan)] to-[color:var(--background)] p-4 min-h-[118px] flex items-end">
-                  <span className="font-mono text-xs font-bold text-white">BỘ ẢNH</span>
+                <div className="relative overflow-hidden rounded-lg min-h-[148.12px] flex items-end">
+                  <Image
+                    src="/media/thumbnails/photoshoot-thumbnail.png"
+                    alt="Bộ ảnh thumbnail"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 " />
+                  <span className="relative z-10 font-mono text-xs font-bold text-white p-4">BỘ ẢNH</span>
                 </div>
                 <h3 className="mt-5 font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
                   BỘ ẢNH
@@ -105,8 +113,16 @@ export function MediaArchivePage() {
             {/* Series Card */}
             <NeonCard className="flex flex-col justify-between border-[color:var(--neon-purple)]">
               <div>
-                <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-[color:var(--neon-purple)] to-[color:var(--background)] p-4 min-h-[118px] flex items-end">
-                  <span className="font-mono text-xs font-bold text-white">TẬP NGẮN</span>
+                <div className="relative overflow-hidden rounded-lg min-h-[148.12px] flex items-end">
+                  <Image
+                    src="/media/thumbnails/series-card-thumbnail.png"
+                    alt="Series thumbnail"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 " />
+                  <span className="relative z-10 font-mono text-xs font-bold text-white p-4">TẬP NGẮN</span>
                 </div>
                 <h3 className="mt-5 font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
                   SERIES MỘT CÚ TASK
@@ -126,8 +142,16 @@ export function MediaArchivePage() {
             {/* Short Film Card */}
             <NeonCard className="flex flex-col justify-between border-[color:var(--neon-pink)]">
               <div>
-                <div className="relative overflow-hidden rounded-lg bg-gradient-to-br from-[color:var(--neon-pink)] to-[color:var(--background)] p-4 min-h-[118px] flex items-end">
-                  <span className="font-mono text-xs font-bold text-white">PHIM</span>
+                <div className="relative overflow-hidden rounded-lg min-h-[148.12px] flex items-end">
+                  <Image
+                    src="/media/thumbnails/shortfilm-card-thumbnail.png"
+                    alt="Phim ngắn thumbnail"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 " />
+                  <span className="relative z-10 font-mono text-xs font-bold text-white p-4">PHIM</span>
                 </div>
                 <h3 className="mt-5 font-[family-name:var(--font-heading)] text-2xl font-bold uppercase text-white">
                   PHIM NGẮN
@@ -232,7 +256,7 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
             </h1>
 
             {/* Video Player */}
-            <div className="relative overflow-hidden flex justify-center rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+            <div className="relative overflow-hidden  rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
               {isFacebook ? (
                 <iframe
                   src={playerSrc}
