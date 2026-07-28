@@ -120,63 +120,66 @@ export default function GameSummary({
         </div>
 
         {/* More stats */}
-        <div className="text-left space-y-1 mb-4 text-sm">
-          {/* Progress bar */}
-          <div className="mb-5">
-            <div className="w-full h-6 bg-[color:var(--surface)] rounded-xl overflow-hidden">
-              <div
-                className="h-full bg-gradient-to-r from-[color:var(--neon-cyan)] to-[color:var(--neon-green)] rounded-xl transition-all duration-1000 flex items-center justify-center text-black text-xs font-bold"
-                style={{ width: `${progressPercent}%` }}
-              >
-                {progressPercent >= 10 ? `${progressPercent}%` : ""}
-              </div>
+
+
+
+
+        {/* Progress bar */}
+        <div className="mb-5">
+          <div className="w-full h-6 bg-[color:var(--surface)] rounded-xl overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-[color:var(--neon-cyan)] to-[color:var(--neon-green)] rounded-xl transition-all duration-1000 flex items-center justify-center text-black text-xs font-bold"
+              style={{ width: `${progressPercent}%` }}
+            >
+              {progressPercent >= 10 ? `${progressPercent}%` : ""}
             </div>
-            <p className="text-sm font-bold text-[color:var(--text-muted)] mt-1">
-              Hiệu suất thực tế: {progressPercent}%
+          </div>
+          <p className="text-sm font-bold text-[color:var(--text-muted)] mt-1">
+            Hiệu suất thực tế: {progressPercent}%
+          </p>
+        </div>
+
+        {percentGap !== null && (
+          <div className="rounded-lg border border-[color:var(--neon-purple)]/35 bg-[rgba(130,0,255,0.08)] p-3 mb-5 text-left">
+            <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-purple)] mb-1">
+              So sánh với dự đoán
+            </p>
+            <p className="text-sm text-[color:var(--text-muted)]">
+              Bạn dự đoán <strong className="text-white">{expectedPercent}%</strong>, thực tế đạt{" "}
+              <strong className="text-white">{progressPercent}%</strong>.
+            </p>
+            <p className={`mt-1 text-sm font-bold ${percentGap >= 0 ? "text-[color:var(--neon-green)]" : "text-[color:var(--neon-pink)]"}`}>
+              {percentGap >= 0
+                ? `Vượt dự đoán ${percentGap}%`
+                : `Thấp hơn dự đoán ${Math.abs(percentGap)}%`}
             </p>
           </div>
+        )}
 
-          {percentGap !== null && (
-            <div className="rounded-lg border border-[color:var(--neon-purple)]/35 bg-[rgba(130,0,255,0.08)] p-3 mb-5 text-left">
-              <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-purple)] mb-1">
-                So sánh với dự đoán
-              </p>
-              <p className="text-sm text-[color:var(--text-muted)]">
-                Bạn dự đoán <strong className="text-white">{expectedPercent}%</strong>, thực tế đạt{" "}
-                <strong className="text-white">{progressPercent}%</strong>.
-              </p>
-              <p className={`mt-1 text-sm font-bold ${percentGap >= 0 ? "text-[color:var(--neon-green)]" : "text-[color:var(--neon-pink)]"}`}>
-                {percentGap >= 0
-                  ? `Vượt dự đoán ${percentGap}%`
-                  : `Thấp hơn dự đoán ${Math.abs(percentGap)}%`}
-              </p>
-            </div>
-          )}
+        {/* Insight */}
+        <div className="rounded-lg border border-[color:var(--neon-cyan)]/30 bg-[color:var(--surface)] p-4 mb-5 text-left">
+          <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-cyan)] mb-2">
+            💡 Ghi nhận hệ thống
+          </p>
+          <p className="text-sm text-[color:var(--text-muted)] leading-relaxed">{insight}</p>
+        </div>
 
-          {/* Insight */}
-          <div className="rounded-lg border border-[color:var(--neon-cyan)]/30 bg-[color:var(--surface)] p-4 mb-5 text-left">
-            <p className="text-xs font-bold uppercase tracking-wider text-[color:var(--neon-cyan)] mb-2">
-              💡 Ghi nhận hệ thống
-            </p>
-            <p className="text-sm text-[color:var(--text-muted)] leading-relaxed">{insight}</p>
-          </div>
-
-          {/* Buttons */}
-          <div className="flex flex-col gap-3">
-            <button
-              onClick={onBackHome}
-              className="min-h-12 rounded-lg border border-[color:var(--neon-cyan)] bg-[color:var(--neon-blue)] text-white font-bold shadow-[0_0_20px_rgba(39,255,255,0.3)] hover:bg-[color:var(--neon-purple)] transition-all"
-            >
-              🏠 Trở lại trang chủ
-            </button>
-            <Link
-              href="/information"
-              className="min-h-12 inline-flex items-center justify-center rounded-lg border border-[color:var(--neon-cyan)]/50 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold hover:border-[color:var(--neon-cyan)] hover:text-white transition"
-            >
-              📖 Đọc ghi chép về đa nhiệm
-            </Link>
-          </div>
+        {/* Buttons */}
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={onBackHome}
+            className="min-h-12 rounded-lg border border-[color:var(--neon-cyan)] bg-[color:var(--neon-blue)] text-white font-bold shadow-[0_0_20px_rgba(39,255,255,0.3)] hover:bg-[color:var(--neon-purple)] transition-all"
+          >
+            🏠 Trở lại trang chủ
+          </button>
+          <Link
+            href="/information"
+            className="min-h-12 inline-flex items-center justify-center rounded-lg border border-[color:var(--neon-cyan)]/50 bg-[color:var(--surface)] text-[color:var(--text-muted)] font-bold hover:border-[color:var(--neon-cyan)] hover:text-white transition"
+          >
+            📖 Đọc ghi chép về đa nhiệm
+          </Link>
         </div>
       </div>
-      );
+    </div>
+  );
 }
