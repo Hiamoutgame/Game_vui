@@ -11,7 +11,7 @@ import ArrowGame from "./arrow-game";
 import GameDemo from "./game-demo";
 import GameSummary from "./game-summary";
 import { GAME_NAMES, GAME_NUMBERS, VICTORY_LEVEL, GAME_MAX_SCORES } from "./types";
-import type { GameId } from "./types";
+import type { FailureKind, GameId } from "./types";
 import { DistractionNotifications } from "@/components/ui/distraction-notifications";
 
 function GamePlayContent() {
@@ -119,10 +119,10 @@ function GamePlayContent() {
   );
 
   const handleFail = useCallback(
-    (gameId: GameId) => {
+    (gameId: GameId, failureKind: FailureKind) => {
       setErrorFlash(true);
       setTimeout(() => setErrorFlash(false), 400);
-      actions.penalizeGame(gameId);
+      actions.penalizeGame(gameId, failureKind);
       setPenaltyKeys((prev) => ({ ...prev, [gameId]: (prev[gameId] || 0) + 1 }));
     },
     [actions]
@@ -314,7 +314,7 @@ function GamePlayContent() {
                 penaltyKey={penaltyKeys.km}
                 errorFlash={errorFlash}
                 onScore={() => handleScore("km")}
-                onFail={() => handleFail("km")}
+                onFail={(failureKind) => handleFail("km", failureKind)}
                 onPenaltyReset={() => handlePenaltyReset()}
                 onLevelChange={(lvl) => handleLevelChange("km", lvl)}
               />
@@ -341,7 +341,7 @@ function GamePlayContent() {
                 penaltyKey={penaltyKeys.ht}
                 errorFlash={errorFlash}
                 onScore={() => handleScore("ht")}
-                onFail={() => handleFail("ht")}
+                onFail={(failureKind) => handleFail("ht", failureKind)}
                 onPenaltyReset={() => handlePenaltyReset()}
                 onLevelChange={(lvl) => handleLevelChange("ht", lvl)}
               />
@@ -368,7 +368,7 @@ function GamePlayContent() {
                 penaltyKey={penaltyKeys.nc}
                 errorFlash={errorFlash}
                 onScore={() => handleScore("nc")}
-                onFail={() => handleFail("nc")}
+                onFail={(failureKind) => handleFail("nc", failureKind)}
                 onPenaltyReset={() => handlePenaltyReset()}
                 onLevelChange={(lvl) => handleLevelChange("nc", lvl)}
               />
@@ -395,7 +395,7 @@ function GamePlayContent() {
                 penaltyKey={penaltyKeys.px}
                 errorFlash={errorFlash}
                 onScore={() => handleScore("px")}
-                onFail={() => handleFail("px")}
+                onFail={(failureKind) => handleFail("px", failureKind)}
                 onPenaltyReset={() => handlePenaltyReset()}
                 onLevelChange={(lvl) => handleLevelChange("px", lvl)}
               />
@@ -410,6 +410,8 @@ function GamePlayContent() {
         isVictory={engine.victory}
         totalScore={engine.totalScore}
         totalFails={engine.totalFails}
+        totalMistakes={engine.totalMistakes}
+        totalMisses={engine.totalMisses}
         currentLevel={engine.currentLevel}
         maxLevel={maxLevel}
         gameStartTime={engine.gameStartTime}

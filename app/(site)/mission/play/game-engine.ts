@@ -1,19 +1,23 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
+import type { FailureKind, GameId, GameScores, GameFailures, GameLevels } from "./types";
 import { VICTORY_LEVEL, MAX_PER_GAME_SCORE, GAME_MAX_SCORES } from "./types";
 import { soundSystem } from "./sound-system";
 
 export interface GameEngineState {
   totalScore: number;
   totalFails: number;
+  totalMistakes: number;
+  totalMisses: number;
   currentLevel: number;
   isPlaying: boolean;
   victory: boolean;
   gameStartTime: number | null;
   gameScores: GameScores;
   gameFailures: GameFailures;
+  gameMistakes: GameFailures;
+  gameMisses: GameFailures;
   gameLevels: GameLevels;
   activeGames: GameId[];
   completedGames: Set<GameId>;
@@ -22,7 +26,7 @@ export interface GameEngineState {
 export interface GameEngineActions {
   startGame: (games: GameId[], demoCap?: number) => void;
   addScore: (gameId: GameId) => void;
-  penalizeGame: (gameId: GameId) => void;
+  penalizeGame: (gameId: GameId, failureKind: FailureKind) => void;
   checkGameComplete: (gameId: GameId) => boolean;
   setGameLevel: (gameId: GameId, level: number) => void;
   endGame: () => void;
@@ -34,12 +38,16 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
   const [state, setState] = useState<GameEngineState>({
     totalScore: 0,
     totalFails: 0,
+    totalMistakes: 0,
+    totalMisses: 0,
     currentLevel: 1,
     isPlaying: false,
     victory: false,
     gameStartTime: null,
     gameScores: { km: 0, ht: 0, nc: 0, px: 0 },
     gameFailures: { km: 0, ht: 0, nc: 0, px: 0 },
+    gameMistakes: { km: 0, ht: 0, nc: 0, px: 0 },
+    gameMisses: { km: 0, ht: 0, nc: 0, px: 0 },
     gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
     activeGames: [],
     completedGames: new Set<GameId>(),
@@ -70,12 +78,16 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
       setState({
         totalScore: 0,
         totalFails: 0,
+        totalMistakes: 0,
+        totalMisses: 0,
         currentLevel: 1,
         isPlaying: true,
         victory: false,
         gameStartTime: Date.now(),
         gameScores: initialScores,
         gameFailures: initialFailures,
+        gameMistakes: initialFailures,
+        gameMisses: initialFailures,
         gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
         activeGames: games,
         completedGames: new Set<GameId>(),
@@ -105,17 +117,29 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
   );
 
   const penalizeGame = useCallback(
-    (gameId: GameId) => {
+    (gameId: GameId, failureKind: FailureKind) => {
       soundSystem.wrong();
       setState((prev) => {
         if (!prev.isPlaying || prev.victory) return prev;
 
         const newFails = { ...prev.gameFailures, [gameId]: (prev.gameFailures[gameId] || 0) + 1 };
+        const newMistakes =
+          failureKind === "mistake"
+            ? { ...prev.gameMistakes, [gameId]: (prev.gameMistakes[gameId] || 0) + 1 }
+            : prev.gameMistakes;
+        const newMisses =
+          failureKind === "miss"
+            ? { ...prev.gameMisses, [gameId]: (prev.gameMisses[gameId] || 0) + 1 }
+            : prev.gameMisses;
 
         return {
           ...prev,
           totalFails: prev.totalFails + 1,
+          totalMistakes: prev.totalMistakes + (failureKind === "mistake" ? 1 : 0),
+          totalMisses: prev.totalMisses + (failureKind === "miss" ? 1 : 0),
           gameFailures: newFails,
+          gameMistakes: newMistakes,
+          gameMisses: newMisses,
         };
       });
     },
@@ -132,12 +156,16 @@ export function useGameEngine(): [GameEngineState, GameEngineActions] {
     setState({
       totalScore: 0,
       totalFails: 0,
+      totalMistakes: 0,
+      totalMisses: 0,
       currentLevel: 1,
       isPlaying: false,
       victory: false,
       gameStartTime: null,
       gameScores: { km: 0, ht: 0, nc: 0, px: 0 },
       gameFailures: { km: 0, ht: 0, nc: 0, px: 0 },
+      gameMistakes: { km: 0, ht: 0, nc: 0, px: 0 },
+      gameMisses: { km: 0, ht: 0, nc: 0, px: 0 },
       gameLevels: { km: 1, ht: 1, nc: 1, px: 1 },
       activeGames: [],
       completedGames: new Set<GameId>(),

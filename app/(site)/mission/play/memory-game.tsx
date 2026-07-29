@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
 import { MEMORY_MAX_SCORE } from "./types";
+import type { FailureKind } from "./types";
 
 const EMOJIS = ["🎮","🎯","⭐","🔥","💎","🎪","🎭","🎨","🚀","🌙","🎵","🍀","🌈","🦊","🐼","🦄","🍕","⚡","🎁","🏆"];
 
@@ -43,7 +44,7 @@ interface MemoryGameProps {
   penaltyKey: number;
   errorFlash: boolean;
   onScore: () => void;
-  onFail: () => void;
+  onFail: (failureKind: FailureKind) => void;
   onPenaltyReset: () => void;
   onLevelChange?: (level: number) => void;
 }
@@ -144,7 +145,7 @@ export default function MemoryGame({ compact = false, globalLevel: _globalLevel,
     const nextLevel = memoryProgressLevel + 1;
     setMemoryProgressLevel(nextLevel);
     setup(nextLevel);
-    onFail();
+    onFail("miss");
   }, [timeLeft, isPlaying, isComplete, memoryProgressLevel, setup, onFail]);
 
   // Penalty reset

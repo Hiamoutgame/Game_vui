@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
 import { MAX_PER_GAME_SCORE } from "./types";
+import type { FailureKind } from "./types";
 
 const WORDS = ["ĐỎ", "XANH", "LỤC", "VÀNG", "CAM", "TÍM", "HỒNG", "ĐEN", "TRẮNG", "NÂU"];
 const COLORS = [
@@ -53,7 +54,7 @@ interface WordGameProps {
   penaltyKey: number;
   errorFlash: boolean;
   onScore: () => void;
-  onFail: () => void;
+  onFail: (failureKind: FailureKind) => void;
   onPenaltyReset: () => void;
   onLevelChange?: (level: number) => void;
 }
@@ -103,7 +104,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    onFail();
+    onFail("miss");
     setRound(generateRound());
     startTimer();
   }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
@@ -159,7 +160,7 @@ export default function WordGame({ compact = false, gameScore, isPlaying, isComp
         startTimer();
       } else {
         setRound(generateRound());
-        onFail();
+        onFail("mistake");
         // Timer stopped via parent
       }
     },

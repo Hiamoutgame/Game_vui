@@ -9,6 +9,8 @@ interface GameSummaryProps {
   isVictory: boolean | null;
   totalScore: number;
   totalFails: number;
+  totalMistakes: number;
+  totalMisses: number;
   currentLevel: number;
   maxLevel?: number;
   gameStartTime: number | null;
@@ -38,6 +40,8 @@ export default function GameSummary({
   isOpen,
   isVictory,
   totalFails,
+  totalMistakes,
+  totalMisses,
   gameScores,
   gameFailures,
   activeGames,
@@ -97,12 +101,21 @@ export default function GameSummary({
         </div>
 
         {/* Total row */}
-        <div className="flex justify-between px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 font-bold text-white">
-          <span>Tổng điểm</span>
-          <span>
+        <div className="flex justify-between gap-4 px-3 py-3 bg-[color:var(--neon-blue)]/20 rounded-lg mb-3 text-white">
+          <div className="text-left">
+            <span className="font-bold">Tổng điểm</span>
+            <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs font-bold text-[color:var(--text-muted)]">
+              <span>
+                Lỗi sai: <strong className="text-[color:var(--neon-pink)]">{totalMistakes}</strong>
+              </span>
+              <span>
+                Bỏ lỡ: <strong className="text-[color:var(--neon-cyan)]">{totalMisses}</strong>
+              </span>
+            </div>
+          </div>
+          <span className="shrink-0 font-bold">
             {netScore} / {maxTotal}
           </span>
-
         </div>
 
         {/* More stats */}

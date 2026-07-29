@@ -26,6 +26,7 @@ export const GAME_NUMBERS: Record<GameId, string> = {
 export type GameScores = Record<GameId, number>;
 export type GameFailures = Record<GameId, number>;
 export type GameLevels = Record<GameId, number>;
+export type FailureKind = "mistake" | "miss";
 
 export const VICTORY_LEVEL = 20;
 export const MAX_PER_GAME_SCORE = 20;
@@ -43,12 +44,16 @@ export const GAME_MAX_SCORES: Record<GameId, number> = {
 export interface GameState {
   totalScore: number;
   totalFails: number;
+  totalMistakes: number;
+  totalMisses: number;
   currentLevel: number;
   isPlaying: boolean;
   victory: boolean;
   gameStartTime: number | null;
   gameScores: GameScores;
   gameFailures: GameFailures;
+  gameMistakes: GameFailures;
+  gameMisses: GameFailures;
   activeGames: GameId[];
 }
 

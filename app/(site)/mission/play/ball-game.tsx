@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
+import type { FailureKind } from "./types";
 
 interface BallGameProps {
   compact?: boolean;
@@ -11,7 +12,7 @@ interface BallGameProps {
   penaltyKey: number;
   errorFlash: boolean;
   onScore: () => void;
-  onFail: () => void;
+  onFail: (failureKind: FailureKind) => void;
   onPenaltyReset: () => void;
   onLevelChange?: (level: number) => void;
 }
@@ -128,12 +129,12 @@ export default function BallGame({ compact = false, gameScore, isPlaying, isComp
           return;
         } else {
           // Missed
-          onFailRef.current();
+          onFailRef.current("miss");
           resetBall(areaWidth);
         }
       } else if (ballRef.current.y >= areaHeight - BALL_SIZE) {
         // Past bottom
-        onFailRef.current();
+        onFailRef.current("miss");
         resetBall(areaWidth);
       }
 

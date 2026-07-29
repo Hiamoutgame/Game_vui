@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { soundSystem } from "./sound-system";
 import { MAX_PER_GAME_SCORE } from "./types";
+import type { FailureKind } from "./types";
 
 const DIRECTIONS = ["up", "down", "left", "right"] as const;
 type Direction = (typeof DIRECTIONS)[number];
@@ -22,7 +23,7 @@ interface ArrowGameProps {
   penaltyKey: number;
   errorFlash: boolean;
   onScore: () => void;
-  onFail: () => void;
+  onFail: (failureKind: FailureKind) => void;
   onPenaltyReset: () => void;
   onLevelChange?: (level: number) => void;
 }
@@ -71,7 +72,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
   useEffect(() => {
     if (timeLeft > 0 || !timedOutRef.current || !isPlaying || isComplete) return;
     timedOutRef.current = false;
-    onFail();
+    onFail("miss");
     setCurrentDir(DIRECTIONS[Math.floor(Math.random() * 4)]);
     startTimer();
   }, [timeLeft, isPlaying, isComplete, onFail, startTimer]);
@@ -121,7 +122,7 @@ export default function ArrowGame({ compact = false, gameScore, isPlaying, isCom
         const duration = getTimerDuration(arrowLevel);
         setTimeLeft(duration);
       } else {
-        onFail();
+        onFail("mistake");
       }
     },
     [isPlaying, isComplete, currentDir, onScore, onFail, arrowLevel]
