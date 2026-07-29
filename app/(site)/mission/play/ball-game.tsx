@@ -17,7 +17,7 @@ interface BallGameProps {
 }
 
 function getFallTime(level: number): number {
-  return Math.max(1.8, 3.75 - (level - 1) * 0.15);
+  return Math.max(2.1, 3.75 - (level - 1) * 0.15);
 }
 
 const BALL_SIZE = 20;
