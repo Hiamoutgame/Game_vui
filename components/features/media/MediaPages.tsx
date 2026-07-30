@@ -256,13 +256,14 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
             </h1>
 
             {/* Video Player */}
-            <div className="relative overflow-hidden  rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+            <div className={`relative flex items-center justify-center overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)] ${isFacebook ? "mx-auto w-[267px] max-w-full" : "w-full"}`}>
               {isFacebook ? (
                 <iframe
+                  className="mx-auto block h-[476px] w-[267px] max-w-full shrink-0"
                   src={playerSrc}
-                  width="267"
-                  height="476"
-                  style={{ border: "none", overflow: "hidden" }}
+                  width={267}
+                  height={476}
+                  style={{ border: "none", overflow: "hidden", width: "267px", height: "476px" }}
                   scrolling="no"
                   frameBorder="0"
                   allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
@@ -345,7 +346,7 @@ export function EpisodePage({ episode }: { episode: string }) {
         </div>
 
         {/* Video Player */}
-        <div className="relative overflow-hidden rounded-lg border border-[color:var(--neon-cyan)] bg-gradient-to-r from-black to-[color:var(--surface)] p-4 md:p-8">
+        <div className="relative flex flex-col overflow-hidden rounded-lg border border-[color:var(--neon-cyan)] bg-gradient-to-r from-black to-[color:var(--surface)] p-4 md:p-8">
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(39,255,255,0.08),transparent_70%)] pointer-events-none" />
 
           {/* Title */}
@@ -354,13 +355,14 @@ export function EpisodePage({ episode }: { episode: string }) {
           </h2>
 
           {/* Video Player */}
-          <div className="relative z-10 flex justify-center w-full overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)]">
+          <div className={`relative z-10 flex items-center justify-center overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)] ${isFacebook ? "mx-auto w-[267px] max-w-full" : "w-full"}`}>
             {isFacebook ? (
-              <iframe
-                src={playerSrc}
-                width="267"
-                height="476"
-                style={{ border: "none", overflow: "hidden", }}
+                <iframe
+                  className="mx-auto block h-[476px] w-[267px] max-w-full shrink-0"
+                  src={playerSrc}
+                  width={267}
+                  height={476}
+                style={{ border: "none", overflow: "hidden", width: "267px", height: "476px" }}
                 scrolling="no"
                 frameBorder="0"
                 allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
