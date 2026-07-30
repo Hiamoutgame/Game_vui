@@ -282,14 +282,7 @@ export function SeriesPage({ initialEpisode = "1" }: { initialEpisode?: string }
               )}
             </div>
 
-            {/* Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 text-sm font-mono text-white">
-              <span>{platformLabel}</span>
-              <span>Thời lượng: {currentDetails.duration}</span>
-              <a href={externalLink} target="_blank" rel="noreferrer" className="hover:text-[color:var(--neon-cyan)]">
-                {externalLinkLabel}
-              </a>
-            </div>
+
 
             {/* Info Text */}
             <div className="space-y-3">
@@ -357,11 +350,11 @@ export function EpisodePage({ episode }: { episode: string }) {
           {/* Video Player */}
           <div className={`relative z-10 flex items-center justify-center overflow-hidden rounded-lg border border-[color:var(--neon-cyan)]/35 bg-black shadow-[0_0_28px_rgba(39,255,255,0.18)] ${isFacebook ? "mx-auto w-[267px] max-w-full" : "w-full"}`}>
             {isFacebook ? (
-                <iframe
-                  className="mx-auto block h-[476px] w-[267px] max-w-full shrink-0"
-                  src={playerSrc}
-                  width={267}
-                  height={476}
+              <iframe
+                className="mx-auto block h-[476px] w-[267px] max-w-full shrink-0"
+                src={playerSrc}
+                width={267}
+                height={476}
                 style={{ border: "none", overflow: "hidden", width: "267px", height: "476px" }}
                 scrolling="no"
                 frameBorder="0"
@@ -382,7 +375,7 @@ export function EpisodePage({ episode }: { episode: string }) {
           </div>
 
           {/* Controls Bar */}
-          <div className="relative z-10 mt-4 flex flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 text-sm font-mono text-white">
+          <div className={`relative z-10 mt-4 ${isFacebook ? "hidden" : "flex"} flex-wrap items-center justify-between gap-4 rounded border border-[color:var(--neon-cyan)]/20 bg-black/80 px-4 py-3 text-sm font-mono text-white`}>
             <span>{platformLabel}</span>
             <span>Thời lượng: {currentEp.duration}</span>
             <a href={externalLink} target="_blank" rel="noreferrer" className="hover:text-[color:var(--neon-cyan)]">
