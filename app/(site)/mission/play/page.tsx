@@ -270,6 +270,9 @@ function GamePlayContent() {
               <h2 className={`font-[family-name:var(--font-heading)] text-xl font-bold ${errorFlash ? "text-red-400" : "text-[color:var(--neon-cyan)]"}`}>
                 {activeTaskIds.length}/4 TÁC VỤ
               </h2>
+              <p className="mt-0.5 font-mono text-xs font-bold uppercase tracking-wider text-[color:var(--text-muted)]">
+                Level {engine.currentLevel}/{maxLevel}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-2">
