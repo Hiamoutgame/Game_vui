@@ -424,7 +424,6 @@ function GamePlayContent() {
         activeGames={activeTaskIds}
         expectedPercent={expectedPercent}
         onBackHome={handleBackHome}
-        onClose={handleBackToConfig}
       />
       {engine.isPlaying && !engine.victory && <DistractionNotifications />}
     </main>
