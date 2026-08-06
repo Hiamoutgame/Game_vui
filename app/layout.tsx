@@ -23,6 +23,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       className={`${bodyFont.variable} ${headingFont.variable} ${monoFont.variable} h-full antialiased`}
       data-scroll-behavior="smooth"
     >
+
       <body className="min-h-full" suppressHydrationWarning>
         <SkipLink />
         <SiteHeader />
