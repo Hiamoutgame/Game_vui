@@ -28,11 +28,11 @@ export type GameFailures = Record<GameId, number>;
 export type GameLevels = Record<GameId, number>;
 export type FailureKind = "mistake" | "miss";
 
-export const VICTORY_LEVEL = 20;
-export const MAX_PER_GAME_SCORE = 20;
+export const VICTORY_LEVEL = 15;
+export const MAX_PER_GAME_SCORE = 15;
 
 /** Memory game (km) has fewer levels than the other three games. */
-export const MEMORY_MAX_SCORE = 12;
+export const MEMORY_MAX_SCORE = 10;
 
 export const GAME_MAX_SCORES: Record<GameId, number> = {
   km: MEMORY_MAX_SCORE,

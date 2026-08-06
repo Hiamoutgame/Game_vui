@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import Link from "next/link";
 import { GAME_NAMES, GAME_ICONS, GAME_MAX_SCORES } from "./types";
 import type { GameId, GameScores, GameFailures, GameLevels } from "./types";
@@ -20,7 +21,6 @@ interface GameSummaryProps {
   activeGames: GameId[];
   expectedPercent?: number | null;
   onBackHome: () => void;
-  onClose: () => void;
 }
 
 function getInsight(activeCount: number, fails: number, isVictory: boolean | null) {
@@ -47,7 +47,6 @@ export default function GameSummary({
   activeGames,
   expectedPercent = null,
   onBackHome,
-  onClose,
 }: GameSummaryProps) {
   const maxTotal = activeGames.reduce((sum, gameId) => sum + (GAME_MAX_SCORES[gameId] || 20), 0);
   const getGameFinalScore = (gameId: GameId) =>
@@ -57,18 +56,21 @@ export default function GameSummary({
   const percentGap = expectedPercent === null ? null : parseFloat((progressPercent - expectedPercent).toFixed(1));
   const insight = getInsight(activeGames.length, totalFails, isVictory);
 
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/75"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-      role="dialog"
-      aria-modal="true"
-      aria-label="Kết quả nhiệm vụ"
-    >
+    <div className="fixed inset-0 z-[10001] flex items-center justify-center bg-black/75" role="dialog" aria-modal="true" aria-label="Kết quả nhiệm vụ">
       <div className="bg-[color:var(--background)] border border-[color:var(--neon-cyan)]/40 rounded-2xl p-6 md:p-8 max-w-[460px] w-[92%] shadow-[0_12px_40px_rgba(0,0,0,0.5)] text-center max-h-[90vh] overflow-y-auto">
         {/* Title */}
         <h2 className="font-[family-name:var(--font-heading)] text-2xl font-bold text-white mb-1">
